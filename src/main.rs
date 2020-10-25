@@ -248,7 +248,7 @@ impl Widget<State> for GridWidget {
                 let rect = Rect::from_origin_size(point, cell_size);
                 ctx.stroke(rect, &Color::BLACK, 1.0);
 
-                let grid_pos_opt: GridPos = self.grid_pos(point).unwrap();
+                let grid_pos_opt = GridPos { row, col };
 
                 if data.grid[grid_pos_opt] {
                     ctx.fill(rect, &Color::BLACK);
