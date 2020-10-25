@@ -1,17 +1,23 @@
 // Module declarations
 
 // Rust imports
-use std::sync::Arc;
 use std::ops::{Index, IndexMut};
+use std::sync::Arc;
 
 // Druid imports
-use druid::widget::{Align, Container, Label, Split, Flex, Button, RadioGroup, Scroll, List, Padding, SizedBox, CrossAxisAlignment};
-use druid::{AppLauncher, LocalizedString, WindowDesc, theme, Data, Lens, LensWrap, BoxConstraints, WidgetExt};
-use druid::{Size, Point, Color, Rect};
-use druid:: {Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, MouseButton, PaintCtx, RenderContext, UpdateCtx, Widget};
-
-// Route imports
-use place_route_lib as pnr;
+use druid::widget::{
+    Align, Button, Container, CrossAxisAlignment, Flex, Label, List, Padding, RadioGroup, Scroll,
+    SizedBox, Split,
+};
+use druid::{
+    theme, AppLauncher, BoxConstraints, Data, Lens, LensWrap, LocalizedString, WidgetExt,
+    WindowDesc,
+};
+use druid::{Color, Point, Rect, Size};
+use druid::{
+    Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, MouseButton, PaintCtx, RenderContext,
+    UpdateCtx, Widget,
+};
 
 //////////////////////////////////////////////////////////////////////////////////////
 // Constants
@@ -27,7 +33,8 @@ const LIGHT_BLUE: Color = Color::from_rgba32_u32(0xA4CBFA); //OK
 //////////////////////////////////////////////////////////////////////////////////////
 // Application State
 #[derive(Clone, Data, Lens)]
-struct State { //OK
+struct State {
+    //OK
     grid: Grid,
     drawing: bool,
     paused: bool,
@@ -35,18 +42,21 @@ struct State { //OK
 
 // Drawing Structs
 #[derive(Clone, Data)]
-struct Grid { //OK
+struct Grid {
+    //OK
     storage: Arc<Vec<bool>>,
 }
 
 // Application Custom Widgets
-struct GridWidget { //OK
+struct GridWidget {
+    //OK
     cell_size: Size,
     color: Color,
 }
 
 #[derive(Clone, Data, Copy, PartialEq, Debug)]
-struct GridPos { //OK
+struct GridPos {
+    //OK
     row: usize,
     col: usize,
 }
@@ -96,17 +106,17 @@ impl PartialEq for Grid {
 // GridWidget Implementations
 //////////////////////////////////////////////////////////////////////////////////////
 impl GridWidget {
-        fn new() -> GridWidget{
-            GridWidget {
-                cell_size: Size {
-                    width: 0.0,
-                    height: 0.0,
-                },
-                color: LIGHT_BLUE,
-            }
+    fn new() -> GridWidget {
+        GridWidget {
+            cell_size: Size {
+                width: 0.0,
+                height: 0.0,
+            },
+            color: LIGHT_BLUE,
         }
+    }
 
-        fn grid_pos(&self, p: Point) -> Option<GridPos> {
+    fn grid_pos(&self, p: Point) -> Option<GridPos> {
         let w0 = self.cell_size.width;
         let h0 = self.cell_size.height;
         if p.x < 0.0 || p.y < 0.0 || w0 == 0.0 || h0 == 0.0 {
@@ -126,25 +136,22 @@ impl Widget<State> for GridWidget {
         match event {
             Event::WindowConnected => {
                 ctx.request_paint();
-                
             }
 
             Event::MouseDown(e) => {
                 if e.button == MouseButton::Left {
                     data.drawing = true;
                     let grid_pos_opt = self.grid_pos(e.pos);
-                    grid_pos_opt
-                        .iter()
-                        .for_each(|pos| {
-                            println!("Event Down {:?}", pos);
-                            let point = Point {
-                                x: self.cell_size.width * pos.row as f64,
-                                y: self.cell_size.height * pos.col as f64,
-                            };
-                            let rect = Rect::from_origin_size(point, self.cell_size);
-                            data.grid[*pos] = !data.grid[*pos];
-                            ctx.request_paint_rect(rect);
-                        });
+                    grid_pos_opt.iter().for_each(|pos| {
+                        println!("Event Down {:?}", pos);
+                        let point = Point {
+                            x: self.cell_size.width * pos.row as f64,
+                            y: self.cell_size.height * pos.col as f64,
+                        };
+                        let rect = Rect::from_origin_size(point, self.cell_size);
+                        data.grid[*pos] = !data.grid[*pos];
+                        ctx.request_paint_rect(rect);
+                    });
                 }
             }
             Event::MouseUp(e) => {
@@ -160,7 +167,7 @@ impl Widget<State> for GridWidget {
                         let point = Point {
                             x: self.cell_size.width * pos.row as f64,
                             y: self.cell_size.height * pos.col as f64,
-                        }; 
+                        };
                         let rect = Rect::from_origin_size(point, self.cell_size);
                         data.grid[*pos] = true;
                         ctx.request_paint_rect(rect);
@@ -201,7 +208,6 @@ impl Widget<State> for GridWidget {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, data: &State, _env: &Env) {
-
         //Update cell size
         let grid_size: Size = ctx.size();
         let cell_size = Size {
@@ -213,46 +219,44 @@ impl Widget<State> for GridWidget {
 
         // Update drawing area size
         let paint_rect = ctx.region().to_rect();
-        let paint_rows = paint_rect.width()/cell_size.width;
-        let paint_col = paint_rect.height()/cell_size.height;
-        
-        let paint_rows = paint_rows.ceil() as usize; 
-        let paint_col = paint_col.ceil() as usize;
-        //println!("Paint width (blocks): {:?}", paint_rows);
-        //println!("Paint height (blocks): {:?}\n", paint_col);
 
         //Update row, columns ranges
-        let grid_pos_opt:GridPos = self.grid_pos(paint_rect.origin()).unwrap();
+        let grid_pos_opt: GridPos = self.grid_pos(paint_rect.origin()).unwrap();
         let from_row = grid_pos_opt.row;
         let from_col = grid_pos_opt.col;
 
-        let to_row = from_row + paint_rows;
-        let to_col = from_col + paint_col;
+        let to_grid_pos = self
+            .grid_pos(Point::new(paint_rect.max_x(), paint_rect.max_y()))
+            .unwrap_or(GridPos {
+                col: GRID_WIDTH - 1,
+                row: GRID_HEIGHT - 1,
+            });
+        let to_row = to_grid_pos.row;
+        let to_col = to_grid_pos.col;
 
         println!("Paint from row: {:?} to row {:?}", from_row, to_row);
         println!("Paint from col: {:?} to col {:?}", from_col, to_col);
-        
-        
+
         // Draw grid
-            
-        for row in  from_row..to_row {
-            for col in from_col..to_col {
+
+        for row in from_row..=to_row {
+            for col in from_col..=to_col {
                 let point = Point {
                     x: cell_size.width * row as f64,
                     y: cell_size.height * col as f64,
-                };                   
+                };
                 let rect = Rect::from_origin_size(point, cell_size);
                 ctx.stroke(rect, &Color::BLACK, 1.0);
 
-                let grid_pos_opt:GridPos = self.grid_pos(point).unwrap();
+                let grid_pos_opt: GridPos = self.grid_pos(point).unwrap();
 
                 if data.grid[grid_pos_opt] {
-                    ctx.fill(rect, &Color::BLACK);    
+                    ctx.fill(rect, &Color::BLACK);
                 } else {
-                    ctx.fill(rect, &LIGHT_BLUE);                
+                    ctx.fill(rect, &LIGHT_BLUE);
                 }
             }
-        }            
+        }
     }
 
     fn id(&self) -> Option<druid::WidgetId> {
@@ -264,7 +268,6 @@ impl Widget<State> for GridWidget {
     }
 }
 
-
 //////////////////////////////////////////////////////////////////////////////////////
 //
 // Main
@@ -273,10 +276,14 @@ impl Widget<State> for GridWidget {
 
 fn main() {
     let main_window = WindowDesc::new(make_ui_simple)
-    .window_size((1000.0,600.0))
-    .title(LocalizedString::new("Placement & Routing Experiments"));
+        .window_size((1000.0, 600.0))
+        .title(LocalizedString::new("Placement & Routing Experiments"));
     let mut grid = Grid::new();
-    let data = State {grid, drawing:false, paused:true};
+    let data = State {
+        grid,
+        drawing: false,
+        paused: true,
+    };
     AppLauncher::with_window(main_window)
         .configure_env(|env, _| {
             env.set(theme::SELECTION_COLOR, Color::rgb8(0xA6, 0xCC, 0xFF));
@@ -295,5 +302,5 @@ fn main() {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 fn make_ui_simple() -> impl Widget<State> {
-    Flex::column().with_child(GridWidget::new().debug_invalidation())
+    Flex::column().with_child(GridWidget::new())
 }
