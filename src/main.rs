@@ -5,7 +5,6 @@ use std::ops::{Index, IndexMut};
 use std::sync::Arc;
 
 // Druid imports
-<<<<<<< Updated upstream
 use druid::widget::{
     Align, Button, Container, CrossAxisAlignment, Flex, Label, List, Padding, RadioGroup, Scroll,
     SizedBox, Split,
@@ -19,15 +18,6 @@ use druid::{
     Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, MouseButton, PaintCtx, RenderContext,
     UpdateCtx, Widget,
 };
-=======
-use druid::widget::{Align, Container, Label, Split, Flex, Button, RadioGroup, Scroll, List, Padding, SizedBox, CrossAxisAlignment};
-use druid::{AppLauncher, LocalizedString, WindowDesc, theme, Data, Lens, LensWrap, BoxConstraints, WidgetExt};
-use druid::{Size, Point, Color, Rect};
-use druid:: {Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, MouseButton, PaintCtx, RenderContext, UpdateCtx, Widget};
-
-// Route imports
-//use place_route_lib as pnr;
->>>>>>> Stashed changes
 
 //////////////////////////////////////////////////////////////////////////////////////
 // Constants
@@ -256,7 +246,7 @@ impl Widget<State> for GridWidget {
                     y: cell_size.height * col as f64,
                 };
                 let rect = Rect::from_origin_size(point, cell_size);
-                ctx.stroke(rect, &Color::BLACK, 1.0);
+                //ctx.stroke(rect, &Color::BLACK, 1.0);
 
                 let grid_pos_opt = GridPos { row, col };
 
