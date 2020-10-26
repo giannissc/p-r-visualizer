@@ -5,6 +5,7 @@ use std::ops::{Index, IndexMut};
 use std::sync::Arc;
 
 // Druid imports
+<<<<<<< Updated upstream
 use druid::widget::{
     Align, Button, Container, CrossAxisAlignment, Flex, Label, List, Padding, RadioGroup, Scroll,
     SizedBox, Split,
@@ -18,6 +19,15 @@ use druid::{
     Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, MouseButton, PaintCtx, RenderContext,
     UpdateCtx, Widget,
 };
+=======
+use druid::widget::{Align, Container, Label, Split, Flex, Button, RadioGroup, Scroll, List, Padding, SizedBox, CrossAxisAlignment};
+use druid::{AppLauncher, LocalizedString, WindowDesc, theme, Data, Lens, LensWrap, BoxConstraints, WidgetExt};
+use druid::{Size, Point, Color, Rect};
+use druid:: {Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, MouseButton, PaintCtx, RenderContext, UpdateCtx, Widget};
+
+// Route imports
+//use place_route_lib as pnr;
+>>>>>>> Stashed changes
 
 //////////////////////////////////////////////////////////////////////////////////////
 // Constants
