@@ -31,8 +31,13 @@ enum GridNodes {
     ChosenPath(i32),
 }
 
-pub struct GridWidget {
+#[derive(Clone, Data, PartialEq)]
+pub struct Grid {
     storage: HashMap<GridPos, GridNodes>,
+}
+
+pub struct GridWidget {
+    grid: Grid,
     rows: usize,
     columns: usize,
     cell_size: Size,
@@ -48,10 +53,17 @@ pub struct GridWidget {
 //////////////////////////////////////////////////////////////////////////////////////
 // GridWidget Implementations
 //////////////////////////////////////////////////////////////////////////////////////
+impl Grid {
+    pub fn new() -> Grid {
+        Grid {
+            storage: HashMap::new(),
+        }
+    }
+}
 impl GridWidget {
     pub fn new(color: Color, rows:usize, columns:usize) -> Self {
         GridWidget {
-            storage: HashMap::new(),
+            grid: Grid::new(),
             rows: rows,
             columns: columns,
             cell_size: Size {
@@ -77,6 +89,10 @@ impl GridWidget {
         }
         Some(GridPos { row, col })
     }
+
+    pub fn clear(&mut self){
+        self.grid.storage.clear();
+    }
 }
 
 impl <T: Data> Widget<T> for GridWidget {
@@ -91,11 +107,11 @@ impl <T: Data> Widget<T> for GridWidget {
                     let grid_pos_opt = self.grid_pos(e.pos);
                     grid_pos_opt.iter().for_each(|pos| {
                         if self.drawing == Interaction::None {
-                            if self.storage.contains_key(pos) {
-                                self.storage.remove(pos);
+                            if self.grid.storage.contains_key(pos) {
+                                self.grid.storage.remove(pos);
                                 self.drawing = Interaction::Erasing
                             } else {
-                                self.storage.insert(*pos, GridNodes::Wall);
+                                self.grid.storage.insert(*pos, GridNodes::Wall);
                                 self.drawing = Interaction::Drawing
                             }
                         }
@@ -124,9 +140,9 @@ impl <T: Data> Widget<T> for GridWidget {
                     grid_pos_opt.iter().for_each(|pos| {
                         //println!("Event Move: {:?}", *pos);
                         if self.drawing == Interaction::Drawing {
-                            self.storage.insert(*pos, GridNodes::Wall);
+                            self.grid.storage.insert(*pos, GridNodes::Wall);
                         } else if self.drawing == Interaction::Erasing {
-                            self.storage.remove(pos);
+                            self.grid.storage.remove(pos);
                         }
 
                         let point = Point {
@@ -176,7 +192,7 @@ impl <T: Data> Widget<T> for GridWidget {
         //println!("Cell size: {:?}", cell_size);
         
         // Draw grid cells
-        for (cell_pos, cell_type) in self.storage.iter(){
+        for (cell_pos, cell_type) in self.grid.storage.iter(){
             let point = Point {
                 x: cell_size.width * cell_pos.row as f64,
                 y: cell_size.height * cell_pos.col as f64,
