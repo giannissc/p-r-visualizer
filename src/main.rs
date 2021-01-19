@@ -6,11 +6,6 @@
 // FIXME Having ctx.stroke the same colour as ctx.fill still shows a hint of the grid lines
 // FIXME Moving the window causes the app to redraw. File a bug for that
 
-// Rust imports
-use std::ops::{Index, IndexMut};
-use std::sync::Arc;
-use std::cmp;
-
 // Druid imports
 use druid::widget::{
     Align, Button, Container, CrossAxisAlignment, Flex, Label, List, Padding, RadioGroup, Scroll,
@@ -29,9 +24,8 @@ use druid::{
 //////////////////////////////////////////////////////////////////////////////////////
 // Constants
 //////////////////////////////////////////////////////////////////////////////////////
-const GRID_WIDTH: usize = 50; 
+const GRID_WIDTH: usize = 40; 
 const GRID_HEIGHT: usize = 50; 
-const POOL_SIZE: usize = GRID_WIDTH * GRID_HEIGHT; 
 const LIGHT_BLUE: Color = Color::from_rgba32_u32(0xA4CBFA); 
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -51,6 +45,7 @@ struct Grid {
     //storage: Arc<Vec<bool>>,
     //storage: Arc<Vec<Option<GridNodes>>>,
     storage: HashMap<GridPos, GridNodes>,
+    show_grid_axis: bool,
 }
 
 // Application Custom Widgets
@@ -96,6 +91,7 @@ impl Grid {
             //storage: Arc::new(vec![false; POOL_SIZE]),
             //storage: Arc::new(vec![None; POOL_SIZE]),
             storage: HashMap::new(),
+            show_grid_axis: true,
         }
     }
 }
@@ -140,7 +136,7 @@ impl Widget<State> for GridWidget {
                 if e.button == MouseButton::Left {
                     let grid_pos_opt = self.grid_pos(e.pos);
                     grid_pos_opt.iter().for_each(|pos| {
-                        println!("Event Down {:?}", pos);
+                        //println!("Event Down {:?}", pos);
                         let point = Point {
                             x: self.cell_size.width * pos.row as f64,
                             y: self.cell_size.height * pos.col as f64,
@@ -169,7 +165,7 @@ impl Widget<State> for GridWidget {
                 if data.drawing != Interaction::None {
                     let grid_pos_opt = self.grid_pos(e.pos);
                     grid_pos_opt.iter().for_each(|pos| {
-                        println!("Event Move: {:?}", *pos);
+                        //println!("Event Move: {:?}", *pos);
                         let point = Point {
                             x: self.cell_size.width * pos.row as f64,
                             y: self.cell_size.height * pos.col as f64,
@@ -197,23 +193,17 @@ impl Widget<State> for GridWidget {
     ) {
     }
 
-    fn update(&mut self, ctx: &mut UpdateCtx, _old_data: &State, _data: &State, _env: &Env) {
+    fn update(&mut self, _ctx: &mut UpdateCtx, _old_data: &State, _data: &State, _env: &Env) {
         //ctx.request_paint();
     }
 
     // Maybe the issue when drawing a non square grid
-    fn layout(
-        &mut self,
-        _layout_ctx: &mut LayoutCtx,
-        bc: &BoxConstraints,
-        _data: &State,
-        _env: &Env,
-    ) -> Size {
-        let max_size = bc.max();
-        let min_side = max_size.height.min(max_size.width);
+    fn layout(&mut self, _layout_ctx: &mut LayoutCtx, bc: &BoxConstraints, _data: &State, _env: &Env,) -> Size {
+        let width = bc.max().width;
+
         Size {
-            width: min_side,
-            height: min_side,
+            width: width,
+            height: (GRID_HEIGHT as f64 * width) / GRID_WIDTH as f64,
         }
     }
 
@@ -222,56 +212,37 @@ impl Widget<State> for GridWidget {
         let grid_size: Size = ctx.size();
         
         let cell_size = Size {
-            width: grid_size.width.min(grid_size.height) / GRID_WIDTH.min(GRID_HEIGHT) as f64,
-            height: grid_size.width.min(grid_size.height) / GRID_WIDTH.min(GRID_HEIGHT) as f64,
+            width: grid_size.width.max(grid_size.height) / GRID_WIDTH.max(GRID_HEIGHT) as f64,
+            height: grid_size.width.max(grid_size.height) / GRID_WIDTH.max(GRID_HEIGHT) as f64,
         };
         self.cell_size = cell_size;
-        println!("Cell size: {:?}", cell_size);
+        //println!("Cell size: {:?}", cell_size);
 
-        // Update drawing area size
-        let paint_rect = ctx.region().bounding_box();
+        // Draw grid cells
 
-        //Update row, columns ranges
-        let grid_pos_opt: GridPos = self.grid_pos(paint_rect.origin()).unwrap();
-        let from_row = grid_pos_opt.row;
-        let from_col = grid_pos_opt.col;
+        for (cell_pos, cell_type) in data.grid.storage.iter(){
+            let point = Point {
+                x: cell_size.width * cell_pos.row as f64,
+                y: cell_size.height * cell_pos.col as f64,
+            };
 
-        let to_grid_pos = self
-            .grid_pos(Point::new(paint_rect.max_x(), paint_rect.max_y()))
-            .unwrap_or(GridPos {
-                col: GRID_WIDTH - 1,
-                row: GRID_HEIGHT - 1,
-            });
-        let to_row = to_grid_pos.row;
-        let to_col = to_grid_pos.col;
+            let rect = Rect::from_origin_size(point, cell_size);
+            // Keep in mind that stroke get added to the size of the existing rectangle
+            //ctx.stroke(rect, &Color::AQUA, 5.0);
 
-        //println!("Paint from row: {:?} to row {:?}", from_row, to_row);
-        //println!("Paint from col: {:?} to col {:?}", from_col, to_col);
-
-        // Draw grid
-
-        for row in from_row..=to_row {
-            for col in from_col..=to_col {
-                let point = Point {
-                    x: cell_size.width * row as f64,
-                    y: cell_size.height * col as f64,
-                };
-                let rect = Rect::from_origin_size(point, cell_size);
-                ctx.stroke(rect, &Color::BLACK, 1.0);
-
-                //println!("Creating point ({:?},{:?})", row, col);
-
-                let grid_pos_opt = GridPos { row, col };
-
-                if data.grid.storage.get(&grid_pos_opt) == Some(&GridNodes::Wall) {
-                    ctx.fill(rect, &Color::BLACK);
-                } else {
-                    ctx.fill(rect, &LIGHT_BLUE);
-                }
-
-                //println!("Painting point ({:?},{:?})", row, col);
+            if cell_type == &GridNodes::Wall {
+                ctx.fill(rect, &Color::BLACK);
             }
         }
+
+        // Draw grid axis
+        if data.grid.show_grid_axis {
+            //println!("Painting region:{:?}", &ctx.region());
+            //println!("Painting region bounding box:{:?}", &ctx.region().bounding_box());
+            //println!("Painting region size:{:?}", &ctx.size());
+        }
+
+
     }
 
     fn id(&self) -> Option<druid::WidgetId> {
@@ -290,10 +261,11 @@ impl Widget<State> for GridWidget {
 //////////////////////////////////////////////////////////////////////////////////////
 
 fn main() {
+    // TODO Arrange for window size to be set so that it fits the number of row, columns, cell_size
     let main_window = WindowDesc::new(make_ui_simple)
-        .window_size((1000.0, 600.0))
+        .window_size((500.0, 1000.0))
         .title(LocalizedString::new("Placement & Routing Experiments"));
-    let mut grid = Grid::new();
+    let grid = Grid::new();
     let data = State {
         grid,
         drawing: Interaction::None,
