@@ -20,7 +20,7 @@ use druid::{
     theme, AppLauncher, BoxConstraints, Data, Lens, LocalizedString, WidgetExt,
     WindowDesc,
 };
-use druid::{Color, Point, Rect, Size, im::HashSet};
+use druid::{Color, Point, Rect, Size, im::HashMap};
 use druid::{
     Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, MouseButton, PaintCtx, RenderContext,
     UpdateCtx, Widget,
@@ -49,7 +49,8 @@ struct State {
 #[derive(Clone, Data)]
 struct Grid {
     //storage: Arc<Vec<bool>>,
-    storage: Arc<Vec<Option<GridNodes>>>,
+    //storage: Arc<Vec<Option<GridNodes>>>,
+    storage: HashMap<GridPos, GridNodes>,
 }
 
 // Application Custom Widgets
@@ -76,9 +77,8 @@ enum Interaction {
     Erasing,
 }
 
-#[derive(Clone, Data, Copy, PartialEq, Debug)]
-struct GridPos {
-    
+#[derive(Clone, Data, Copy, PartialEq, Debug, Hash, Eq)]
+struct GridPos {   
     row: usize,
     col: usize,
 }
@@ -93,35 +93,10 @@ struct GridPos {
 impl Grid {
     pub fn new() -> Grid {
         Grid {
-            storage: Arc::new(vec![None; POOL_SIZE]),
             //storage: Arc::new(vec![false; POOL_SIZE]),
+            //storage: Arc::new(vec![None; POOL_SIZE]),
+            storage: HashMap::new(),
         }
-    }
-}
-
-impl Index<GridPos> for Grid {
-    type Output = Option<GridNodes>;
-    fn index(&self, pos: GridPos) -> &Self::Output {
-        let idx = pos.row * GRID_WIDTH + pos.col;
-        self.storage.index(idx)
-    }
-}
-
-impl IndexMut<GridPos> for Grid {
-    fn index_mut(&mut self, pos: GridPos) -> &mut Self::Output {
-        let idx = pos.row * GRID_WIDTH + pos.col;
-        Arc::make_mut(&mut self.storage).index_mut(idx)
-    }
-}
-
-impl PartialEq for Grid {
-    fn eq(&self, other: &Self) -> bool {
-        for i in 0..POOL_SIZE {
-            if self.storage[i as usize] != other.storage[i as usize] {
-                return false;
-            }
-        }
-        return true;
     }
 }
 
@@ -172,12 +147,14 @@ impl Widget<State> for GridWidget {
                         };
                         let rect = Rect::from_origin_size(point, self.cell_size);
                         if data.drawing == Interaction::None {
-                            if data.grid[*pos] == None {
-                                data.drawing = Interaction::Drawing
-                            } else {
+                            if data.grid.storage.contains_key(pos) {
+                                data.grid.storage.remove(pos);
                                 data.drawing = Interaction::Erasing
+                            } else {
+                                data.grid.storage.insert(*pos, GridNodes::Wall);
+                                data.drawing = Interaction::Drawing
+                                
                             }
-
                         }
                         ctx.request_paint_rect(rect);
                     });
@@ -199,11 +176,10 @@ impl Widget<State> for GridWidget {
                         };
                         let rect = Rect::from_origin_size(point, self.cell_size);
                         if data.drawing == Interaction::Drawing {
-                            data.grid[*pos] = Some(GridNodes::Wall);
+                            data.grid.storage.insert(*pos, GridNodes::Wall);
                         } else if data.drawing == Interaction::Erasing {
-                            data.grid[*pos] = None;
+                            data.grid.storage.remove(pos);
                         }
-                        
                         ctx.request_paint_rect(rect);
                     });
                 }
@@ -253,7 +229,7 @@ impl Widget<State> for GridWidget {
         println!("Cell size: {:?}", cell_size);
 
         // Update drawing area size
-        let paint_rect = ctx.region().to_rect();
+        let paint_rect = ctx.region().bounding_box();
 
         //Update row, columns ranges
         let grid_pos_opt: GridPos = self.grid_pos(paint_rect.origin()).unwrap();
@@ -287,7 +263,7 @@ impl Widget<State> for GridWidget {
 
                 let grid_pos_opt = GridPos { row, col };
 
-                if data.grid[grid_pos_opt] == Some(GridNodes::Wall) {
+                if data.grid.storage.get(&grid_pos_opt) == Some(&GridNodes::Wall) {
                     ctx.fill(rect, &Color::BLACK);
                 } else {
                     ctx.fill(rect, &LIGHT_BLUE);
