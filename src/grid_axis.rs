@@ -1,6 +1,8 @@
+// TODO Implement infinite zoom and pan functionallity. See scroll example and clipBox documentation
+// FIXME Partial repaint
 use druid::{
     Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, MouseButton, PaintCtx, RenderContext,
-    UpdateCtx, Widget, BoxConstraints, Data
+    UpdateCtx, Widget, BoxConstraints, Data, Lens
 };
 
 use druid::{Color, Point, Rect, Size, im::HashMap};
@@ -10,8 +12,8 @@ pub enum Interaction {
     None,
     Drawing,
     Erasing,
-    Panning,
-    Locked,
+    //Panning,
+    //Locked,
 }
 
 #[derive(Clone, Data, Copy, PartialEq, Debug, Hash, Eq)]
@@ -31,13 +33,13 @@ enum GridNodes {
     ChosenPath(i32),
 }
 
-#[derive(Clone, Data, PartialEq)]
+#[derive(Clone, PartialEq, Data, Lens)]
 pub struct Grid {
     storage: HashMap<GridPos, GridNodes>,
 }
 
+#[derive(Clone, PartialEq, Data, Lens)]
 pub struct GridWidget {
-    grid: Grid,
     rows: usize,
     columns: usize,
     cell_size: Size,
@@ -59,11 +61,14 @@ impl Grid {
             storage: HashMap::new(),
         }
     }
+
+    pub fn clear(&mut self){
+        self.storage.clear();
+    }
 }
 impl GridWidget {
     pub fn new(color: Color, rows:usize, columns:usize) -> Self {
         GridWidget {
-            grid: Grid::new(),
             rows: rows,
             columns: columns,
             cell_size: Size {
@@ -89,14 +94,10 @@ impl GridWidget {
         }
         Some(GridPos { row, col })
     }
-
-    pub fn clear(&mut self){
-        self.grid.storage.clear();
-    }
 }
 
-impl <T: Data> Widget<T> for GridWidget {
-    fn event(&mut self, ctx: &mut EventCtx, event: &Event, _data: &mut T, _env: &Env) {
+impl Widget<Grid> for GridWidget {
+    fn event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut Grid, _env: &Env) {
         match event {
             Event::WindowConnected => {
                 ctx.request_paint();
@@ -107,11 +108,11 @@ impl <T: Data> Widget<T> for GridWidget {
                     let grid_pos_opt = self.grid_pos(e.pos);
                     grid_pos_opt.iter().for_each(|pos| {
                         if self.drawing == Interaction::None {
-                            if self.grid.storage.contains_key(pos) {
-                                self.grid.storage.remove(pos);
+                            if data.storage.contains_key(pos) {
+                                data.storage.remove(pos);
                                 self.drawing = Interaction::Erasing
                             } else {
-                                self.grid.storage.insert(*pos, GridNodes::Wall);
+                                data.storage.insert(*pos, GridNodes::Wall);
                                 self.drawing = Interaction::Drawing
                             }
                         }
@@ -140,9 +141,9 @@ impl <T: Data> Widget<T> for GridWidget {
                     grid_pos_opt.iter().for_each(|pos| {
                         //println!("Event Move: {:?}", *pos);
                         if self.drawing == Interaction::Drawing {
-                            self.grid.storage.insert(*pos, GridNodes::Wall);
+                            data.storage.insert(*pos, GridNodes::Wall);
                         } else if self.drawing == Interaction::Erasing {
-                            self.grid.storage.remove(pos);
+                            data.storage.remove(pos);
                         }
 
                         let point = Point {
@@ -162,15 +163,15 @@ impl <T: Data> Widget<T> for GridWidget {
         }
     }
 
-    fn lifecycle(&mut self, _ctx: &mut LifeCycleCtx, _event: &LifeCycle, _data: &T, _env: &Env, ) {
+    fn lifecycle(&mut self, _ctx: &mut LifeCycleCtx, _event: &LifeCycle, _data: &Grid, _env: &Env, ) {
     }
 
-    fn update(&mut self, _ctx: &mut UpdateCtx, _old_data: &T, _data: &T, _env: &Env) {
+    fn update(&mut self, _ctx: &mut UpdateCtx, _old_data: &Grid, _data: &Grid, _env: &Env) {
         //ctx.request_paint();
     }
 
     // Maybe the issue when drawing a non square grid
-    fn layout(&mut self, _layout_ctx: &mut LayoutCtx, bc: &BoxConstraints, _data: &T, _env: &Env,) -> Size {
+    fn layout(&mut self, _layout_ctx: &mut LayoutCtx, bc: &BoxConstraints, _data: &Grid, _env: &Env,) -> Size {
         let width = bc.max().width;
 
         Size {
@@ -179,7 +180,7 @@ impl <T: Data> Widget<T> for GridWidget {
         }
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, _data: &T, _env: &Env) {
+    fn paint(&mut self, ctx: &mut PaintCtx, data: &Grid, _env: &Env) {
         //Update cell size
         let grid_size: Size = ctx.size();
         
@@ -192,7 +193,7 @@ impl <T: Data> Widget<T> for GridWidget {
         //println!("Cell size: {:?}", cell_size);
         
         // Draw grid cells
-        for (cell_pos, cell_type) in self.grid.storage.iter(){
+        for (cell_pos, cell_type) in data.storage.iter(){
             let point = Point {
                 x: cell_size.width * cell_pos.row as f64,
                 y: cell_size.height * cell_pos.col as f64,
@@ -210,7 +211,7 @@ impl <T: Data> Widget<T> for GridWidget {
         // Draw grid axis
 
         if self.show_grid_axis {
-            for row in 1..=self.rows {
+            for row in 0..=self.rows {
                 let from_point = Point {
                     x: 0.0,
                     y: cell_size.height * row as f64,
@@ -221,7 +222,7 @@ impl <T: Data> Widget<T> for GridWidget {
                 ctx.fill(rect, &Color::GRAY);
             }
     
-            for column in 1..=self.columns {
+            for column in 0..=self.columns {
                 let from_point = Point {
                     x: cell_size.width * column as f64,
                     y: 0.0,

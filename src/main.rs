@@ -1,33 +1,29 @@
-// TODO Implement infinite zoom and pan functionallity. See scroll example and clipBox documentation
 // TODO Configure rustfmt and clippy
-// FIXME Removing ctx.stroke shows grid lines on windowed mode but not maximized.
 
-mod gridAxis;
+mod grid_axis;
+mod pathfinding_algorithms;
 
-use gridAxis::{
+use grid_axis::{
     GridWidget, Grid,
 };
 // Druid imports
-use druid::widget::{
-    Align, Button, Container, CrossAxisAlignment, Flex, Label, List, Padding, RadioGroup, Scroll,
-    SizedBox, Split, Slider,
-};
+use druid::widget::{Button, Flex, Label, MainAxisAlignment, Slider};
 use druid::{
     theme, AppLauncher, Data, Lens, LocalizedString, WidgetExt,
     WindowDesc,
 };
 
 use druid::{
-    Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, MouseButton, PaintCtx,
-    UpdateCtx, Widget, Color,
+    Env, Widget, Color,
 };
 
 //////////////////////////////////////////////////////////////////////////////////////
 // Constants
 //////////////////////////////////////////////////////////////////////////////////////
-const GRID_COLUMNS: usize = 50; 
-const GRID_ROWS: usize = 25; 
+const GRID_COLUMNS: usize = 160; 
+const GRID_ROWS: usize = 100; 
 const COLOR: Color = Color::BLACK;
+const BACKGROUND: Color = Color::grey8(23);
 
 //////////////////////////////////////////////////////////////////////////////////////
 // Structs
@@ -35,7 +31,8 @@ const COLOR: Color = Color::BLACK;
 // Application State
 #[derive(Clone, Data, Lens)]
 struct AppData {
-    paused: bool,
+    pause_algo: bool,
+    start_algo: bool,
     updates_per_second: f64,
     grid: Grid,
 }
@@ -53,7 +50,8 @@ fn main() {
         .window_size((1000.0, 500.0))
         .title(LocalizedString::new("Placement & Routing Experiments"));
     let data = AppData {
-        paused: true,
+        pause_algo: true,
+        start_algo: false,
         updates_per_second: 20.0,
         grid: Grid::new(),
     };
@@ -75,15 +73,30 @@ fn main() {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 fn make_ui_simple() -> impl Widget<AppData> {
-    let grid: GridWidget = GridWidget::new(COLOR, GRID_ROWS, GRID_COLUMNS);
-    //let grid = GridWidget::new(COLOR, GRID_ROWS, GRID_COLUMNS).debug_invalidation();
+    let grid = Flex::column().with_child(GridWidget::new(COLOR, GRID_ROWS, GRID_COLUMNS).lens(AppData::grid));
+    //let grid = Flex::column().with_child(GridWidget::new(COLOR, GRID_ROWS, GRID_COLUMNS).lens(AppData::grid).debug_invalidation());
+    
     Flex::column()
-        .with_flex_child(grid,1.0,)
+        .with_flex_child(grid,1.0)
         .with_child(
             Flex::column()
                 .with_child(
                     // a row with two buttons
                     Flex::row()
+                        .with_flex_child(
+                            // pause / resume button
+                            Button::new(|data: &bool, _: &Env| match data {
+                                true => "Stop".into(),
+                                false => "Start".into(),
+                            })
+                            .on_click(|ctx, data: &mut bool, _: &Env| {
+                                *data = !*data;
+                                ctx.request_layout();
+                            })
+                            .lens(AppData::start_algo)
+                            .padding((5., 5.)),
+                            1.0,
+                        )
                         .with_flex_child(
                             // pause / resume button
                             Button::new(|data: &bool, _: &Env| match data {
@@ -94,7 +107,7 @@ fn make_ui_simple() -> impl Widget<AppData> {
                                 *data = !*data;
                                 ctx.request_layout();
                             })
-                            .lens(AppData::paused)
+                            .lens(AppData::pause_algo)
                             .padding((5., 5.)),
                             1.0,
                         )
@@ -115,7 +128,7 @@ fn make_ui_simple() -> impl Widget<AppData> {
                     Flex::row()
                         .with_child(
                             Label::new(|data: &AppData, _env: &_| {
-                                format!("{:.2}updates/s", data.updates_per_second)
+                                format!("{:.2} updates/s", data.updates_per_second)
                             })
                             .padding(3.0),
                         )
@@ -127,6 +140,6 @@ fn make_ui_simple() -> impl Widget<AppData> {
                             1.,
                         )
                         .padding(8.0),
-                )
-        )
+                ).background(BACKGROUND),     
+            ).main_axis_alignment(MainAxisAlignment::SpaceBetween)
 }
