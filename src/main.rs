@@ -1,14 +1,16 @@
 // TODO Configure rustfmt and clippy
+// TODO Implement custom patterns
+// TODO Refactor app structure
 
 mod grid_axis;
 mod pathfinding_algorithms;
 mod maze_algorithms;
 
-use grid_axis::{Grid, GridNodes, GridPos, GridWidget, WALL_TOOL, END_NODE_TOOL, START_NODE_TOOL, GRID_AXIS};
+use grid_axis::{Grid, GridNodes, GridPos, GridWidget, WALL_TOOL, END_NODE_TOOL, START_NODE_TOOL, TOGGLE_GRID_AXIS};
 
 
 // Druid imports
-use druid::widget::{Button, Flex, Label, MainAxisAlignment, CrossAxisAlignment, Slider, Checkbox, WidgetId};
+use druid::{EventCtx, lens, widget::{Button, Flex, Label, MainAxisAlignment, CrossAxisAlignment, Slider, Checkbox, WidgetId}};
 use druid::{
     theme, AppLauncher, Data, Lens, LocalizedString, WidgetExt,
     WindowDesc, Env, Widget, Color,
@@ -39,6 +41,7 @@ struct AppData {
     selected_tool: GridNodes,
     path_algo: PathAlgorithms,
     maze_algo: MazeAlgorithms,
+    show_grid_lines: bool
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -48,7 +51,7 @@ struct AppData {
 //////////////////////////////////////////////////////////////////////////////////////
 
 fn main() {
-    let main_window = WindowDesc::new(make_ui_simple)
+    let main_window = WindowDesc::new(make_ui)
         .window_size((1000.0, 500.0))
         .title(LocalizedString::new("Placement & Routing Experiments"));
     let data = AppData {
@@ -59,6 +62,7 @@ fn main() {
         selected_tool: GridNodes::Wall,
         path_algo: PathAlgorithms::Astar,
         maze_algo: MazeAlgorithms::Random,
+        show_grid_lines: true,
     };
     AppLauncher::with_window(main_window)
         .configure_env(|env, _| {
@@ -77,35 +81,82 @@ fn main() {
 /// UI functions
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-fn make_ui_simple() -> impl Widget<AppData> {
+fn make_ui() -> impl Widget<AppData> {
     let grid = Flex::column().with_child(GridWidget::new(COLOR, GRID_ROWS, GRID_COLUMNS).with_id(ID_ONE).lens(AppData::grid));
     //let grid = Flex::column().with_child(GridWidget::new(COLOR, GRID_ROWS, GRID_COLUMNS).lens(AppData::grid).debug_invalidation());
-    
-    let start_button = Button::new(|data: &bool, _: &Env| match data {
+
+    Flex::column()
+        .with_flex_child(grid,1.0)
+        .with_child(
+            Flex::column()
+                .with_child(
+                    // a row with two buttons
+                    Flex::row()
+                        .with_flex_child(
+                            Flex::row()
+                                    .with_flex_child(make_start_button(), 1.0,)
+                                    .with_flex_child(make_pause_button(), 1.0,)
+                                    .with_flex_child(make_clear_button(), 1.0,)
+                                    .with_flex_child(make_tool_button(), 1.0)
+                                    .with_flex_child(make_path_button(), 1.0)
+                                    .with_flex_child(make_maze_button(), 1.0)
+                                    .padding(8.0), 
+                            1.0)
+                        .with_child(make_grid_lines_button())
+                    
+                )
+                .with_child(
+                    Flex::row()
+                        .with_child(
+                            Label::new(|data: &AppData, _env: &_| {
+                                format!("{:.2} updates/s", data.updates_per_second)
+                            })
+                            .padding(3.0),
+                        )
+                        .with_flex_child(
+                            Slider::new()
+                                .with_range(0.2, 20.0)
+                                .expand_width()
+                                .lens(AppData::updates_per_second),
+                            1.,
+                        )
+                        .padding(8.0),
+                ).background(BACKGROUND),     
+            ).main_axis_alignment(MainAxisAlignment::SpaceBetween).cross_axis_alignment(CrossAxisAlignment::Center)
+}
+
+fn make_start_button() -> impl Widget<AppData> {
+    Button::new(|data: &bool, _: &Env| match data {
         true => "Stop".into(),
         false => "Start".into(),
     })
     .on_click(|ctx, data: &mut bool, _: &Env| {
         *data = !*data;
         ctx.request_layout();
-    }).lens(AppData::start_algo).padding((5., 5.));
+    }).lens(AppData::start_algo).padding((5., 5.))
+}
 
-    let pause_button = Button::new(|data: &bool, _: &Env| match data {
+fn make_pause_button() -> impl Widget<AppData> {
+    Button::new(|data: &bool, _: &Env| match data {
         true => "Resume".into(),
         false => "Pause".into(),
     })
     .on_click(|ctx, data: &mut bool, _: &Env| {
         *data = !*data;
         ctx.request_layout();
-    }).lens(AppData::pause_algo).padding((5., 5.));
+    }).lens(AppData::pause_algo).padding((5., 5.))
+}
 
-    let clear_button = Button::new("Clear")
+fn make_clear_button() -> impl Widget<AppData> {
+    Button::new("Clear")
     .on_click(|ctx, data: &mut Grid, _: &Env| {
         data.clear_all();
         ctx.request_paint();
-    }).lens(AppData::grid).padding((5., 5.));
+    }).lens(AppData::grid).padding((5., 5.))
+}
 
-    let tool_button = Button::new(|data: &GridNodes, _: &Env| match data {
+fn make_tool_button() -> impl Widget<AppData> {
+    Button::new(|data: &GridNodes, _: &Env| match data {
         GridNodes::Wall => "Wall".into(),
         GridNodes::StartNode(1) => "StartNode".into(),
         GridNodes::EndNode(1) => "EndNode".into(),
@@ -128,9 +179,11 @@ fn make_ui_simple() -> impl Widget<AppData> {
             _ => ()
         };
         ctx.request_layout();
-    }).lens(AppData::selected_tool).padding((5., 5.));
+    }).lens(AppData::selected_tool).padding((5., 5.))
+}
 
-    let path_button = Button::new(|data: &PathAlgorithms, _: &Env| match data {
+fn make_path_button() -> impl Widget<AppData> {
+    Button::new(|data: &PathAlgorithms, _: &Env| match data {
         PathAlgorithms::Astar => "A star".into(),
         PathAlgorithms::Dijkstra => "Dijkstra".into(),
         PathAlgorithms::BidirectionalDijkstra => "Bidirectional Dijkstra".into(),
@@ -144,9 +197,11 @@ fn make_ui_simple() -> impl Widget<AppData> {
             _ => ()
         };
         ctx.request_layout();
-    }).lens(AppData::path_algo).padding((5., 5.));
+    }).lens(AppData::path_algo).padding((5., 5.))
+}
 
-    let maze_button = Button::new(|data: &MazeAlgorithms, _: &Env| match data {
+fn make_maze_button() -> impl Widget<AppData> {
+    Button::new(|data: &MazeAlgorithms, _: &Env| match data {
         MazeAlgorithms::Random => "Random".into(),
         MazeAlgorithms::Recursive => "Recursive".into(),
         MazeAlgorithms::Backtrace => "Backtrace".into(),
@@ -160,39 +215,13 @@ fn make_ui_simple() -> impl Widget<AppData> {
             _ => ()
         };
         ctx.request_layout();
-    }).lens(AppData::maze_algo).padding((5., 5.));
+    }).lens(AppData::maze_algo).padding((5., 5.)) 
+}
 
-    Flex::column()
-        .with_flex_child(grid,1.0)
-        .with_child(
-            Flex::column()
-                .with_child(
-                    // a row with two buttons
-                    Flex::row()
-                        .with_flex_child(start_button, 1.0,)
-                        .with_flex_child(pause_button, 1.0,)
-                        .with_flex_child(clear_button, 1.0,)
-                        .with_flex_child(tool_button, 1.0)
-                        .with_flex_child(path_button, 1.0)
-                        .with_flex_child(maze_button, 1.0)
-                        .padding(8.0),
-                )
-                .with_child(
-                    Flex::row()
-                        .with_child(
-                            Label::new(|data: &AppData, _env: &_| {
-                                format!("{:.2} updates/s", data.updates_per_second)
-                            })
-                            .padding(3.0),
-                        )
-                        .with_flex_child(
-                            Slider::new()
-                                .with_range(0.2, 20.0)
-                                .expand_width()
-                                .lens(AppData::updates_per_second),
-                            1.,
-                        )
-                        .padding(8.0),
-                ).background(BACKGROUND),     
-            ).main_axis_alignment(MainAxisAlignment::SpaceBetween).cross_axis_alignment(CrossAxisAlignment::Center)
+fn make_grid_lines_button() -> impl Widget<AppData> {
+    Checkbox::new("Grid Axis").on_click(|ctx: &mut EventCtx, data: &mut bool, _: &Env| {
+        *data = !*data;
+        ctx.submit_command(TOGGLE_GRID_AXIS.to(ID_ONE))
+        
+    }).lens(AppData::show_grid_lines).padding((5., 5.)) 
 }

@@ -1,12 +1,13 @@
 // TODO Implement infinite zoom and pan functionallity. See scroll example and clipBox documentation
 // FIXME Partial repaint
 // Handle Tool Chain using commands
+
 use druid::{BoxConstraints, Data, Env, Event, EventCtx, LayoutCtx, Lens, LifeCycle, LifeCycleCtx, MouseButton, PaintCtx, RenderContext, Selector, UpdateCtx, Widget, text::selection};
 
 use druid::{Color, Point, Rect, Size, im::HashMap};
 
 
-pub const GRID_AXIS: Selector = Selector::new("toggle-grid");
+pub const TOGGLE_GRID_AXIS: Selector = Selector::new("toggle-grid");
 pub const WALL_TOOL: Selector = Selector::new("wall-tool");
 pub const START_NODE_TOOL: Selector = Selector::new("start-node-tool");
 pub const END_NODE_TOOL: Selector = Selector::new("end-node-tool");
@@ -110,8 +111,9 @@ impl Widget<Grid> for GridWidget {
                     self.selected_tool = GridNodes::EndNode(1);
                 } else if cmd.is(START_NODE_TOOL){
                     self.selected_tool = GridNodes::StartNode(1);
-                } else if cmd.is(GRID_AXIS) {
+                } else if cmd.is(TOGGLE_GRID_AXIS) {
                     self.show_grid_axis = !self.show_grid_axis;
+                    ctx.request_paint();
                 }
             }
 
@@ -126,7 +128,6 @@ impl Widget<Grid> for GridWidget {
                             } else if !data.storage.contains_key(pos) {
                                 if self.selected_tool == GridNodes::Wall {
                                     data.storage.insert(*pos, GridNodes::Wall);
-                                    self.drawing = Interaction::Drawing
                                 } else if self.selected_tool == GridNodes::EndNode(1) {
                                     data.storage.remove(&data.end_node);
                                     ctx.request_paint_rect(self.invalidation_area(data.end_node));
@@ -138,6 +139,7 @@ impl Widget<Grid> for GridWidget {
                                     data.start_node = *pos;
                                     data.storage.insert(*pos, GridNodes::StartNode(1));
                                 }
+                                self.drawing = Interaction::Drawing
                             }
                             ctx.request_paint_rect(self.invalidation_area(*pos));
                         }
@@ -155,10 +157,22 @@ impl Widget<Grid> for GridWidget {
                     grid_pos_opt.iter().for_each(|pos| {
                         //println!("Event Move: {:?}", *pos);
                         if self.drawing == Interaction::Drawing && !data.storage.contains_key(pos){
-                            data.storage.insert(*pos, GridNodes::Wall);
+                            if self.selected_tool == GridNodes::Wall {
+                                data.storage.insert(*pos, GridNodes::Wall);
+                            } else if self.selected_tool == GridNodes::EndNode(1) {
+                                data.storage.remove(&data.end_node);
+                                ctx.request_paint_rect(self.invalidation_area(data.end_node));
+                                data.end_node = *pos;
+                                data.storage.insert(*pos, GridNodes::EndNode(1));
+                            } else if self.selected_tool == GridNodes::StartNode(1) {
+                                data.storage.remove(&data.start_node);
+                                ctx.request_paint_rect(self.invalidation_area(data.start_node));
+                                data.start_node = *pos;
+                                data.storage.insert(*pos, GridNodes::StartNode(1));
+                            }
                         } else if self.drawing == Interaction::Erasing && data.storage.get(pos) == Some(&GridNodes::Wall) {
                             data.storage.remove(pos);
-                        }
+                        } 
 
                         ctx.request_paint_rect(self.invalidation_area(*pos));
                     });
