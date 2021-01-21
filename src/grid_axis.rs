@@ -8,7 +8,7 @@ use druid::{
 use druid::{Color, Point, Rect, Size, im::HashMap};
 
 #[derive(Clone, PartialEq, Data)]
-pub enum Interaction {
+enum Interaction {
     None,
     Drawing,
     Erasing,
@@ -17,17 +17,19 @@ pub enum Interaction {
 }
 
 #[derive(Clone, Data, Copy, PartialEq, Debug, Hash, Eq)]
-struct GridPos {   
+pub struct GridPos {   
     row: usize,
     col: usize,
 }
 
 
-#[derive(Clone, PartialEq, Data)]
-enum GridNodes {
+
+#[derive(Data, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
+pub enum GridNodes {
     Wall,
     StartNode(i32),
     EndNode(i32),
+    SteinerNode(i32),
     OpenPath(i32),
     ClosedPath(i32),
     ChosenPath(i32),
