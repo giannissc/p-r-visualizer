@@ -4,13 +4,11 @@ mod grid_axis;
 mod pathfinding_algorithms;
 mod maze_algorithms;
 
-use grid_axis::{
-    GridWidget, Grid, GridNodes
-};
+use grid_axis::{Grid, GridNodes, GridPos, GridWidget, WALL_TOOL, END_NODE_TOOL, START_NODE_TOOL, GRID_AXIS};
 
 
 // Druid imports
-use druid::widget::{Button, Flex, Label, MainAxisAlignment, CrossAxisAlignment, Slider, Checkbox};
+use druid::widget::{Button, Flex, Label, MainAxisAlignment, CrossAxisAlignment, Slider, Checkbox, WidgetId};
 use druid::{
     theme, AppLauncher, Data, Lens, LocalizedString, WidgetExt,
     WindowDesc, Env, Widget, Color,
@@ -25,6 +23,8 @@ const GRID_COLUMNS: usize = 160;
 const GRID_ROWS: usize = 100; 
 const COLOR: Color = Color::BLACK;
 const BACKGROUND: Color = Color::grey8(23);
+const ID_ONE: WidgetId = WidgetId::reserved(1);
+
 
 //////////////////////////////////////////////////////////////////////////////////////
 // Structs
@@ -36,7 +36,7 @@ struct AppData {
     start_algo: bool,
     updates_per_second: f64,
     grid: Grid,
-    tool: GridNodes,
+    selected_tool: GridNodes,
     path_algo: PathAlgorithms,
     maze_algo: MazeAlgorithms,
 }
@@ -48,7 +48,6 @@ struct AppData {
 //////////////////////////////////////////////////////////////////////////////////////
 
 fn main() {
-    // TODO Arrange for window size to be set so that it fits the number of row, columns, cell_size
     let main_window = WindowDesc::new(make_ui_simple)
         .window_size((1000.0, 500.0))
         .title(LocalizedString::new("Placement & Routing Experiments"));
@@ -56,8 +55,8 @@ fn main() {
         pause_algo: true,
         start_algo: false,
         updates_per_second: 20.0,
-        grid: Grid::new(),
-        tool: GridNodes::Wall,
+        grid: Grid::new(GridPos{row: 20, col: 10}, GridPos{row:20, col:50}),
+        selected_tool: GridNodes::Wall,
         path_algo: PathAlgorithms::Astar,
         maze_algo: MazeAlgorithms::Random,
     };
@@ -79,7 +78,7 @@ fn main() {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 fn make_ui_simple() -> impl Widget<AppData> {
-    let grid = Flex::column().with_child(GridWidget::new(COLOR, GRID_ROWS, GRID_COLUMNS).lens(AppData::grid));
+    let grid = Flex::column().with_child(GridWidget::new(COLOR, GRID_ROWS, GRID_COLUMNS).with_id(ID_ONE).lens(AppData::grid));
     //let grid = Flex::column().with_child(GridWidget::new(COLOR, GRID_ROWS, GRID_COLUMNS).lens(AppData::grid).debug_invalidation());
     
     let start_button = Button::new(|data: &bool, _: &Env| match data {
@@ -102,7 +101,7 @@ fn make_ui_simple() -> impl Widget<AppData> {
 
     let clear_button = Button::new("Clear")
     .on_click(|ctx, data: &mut Grid, _: &Env| {
-        data.clear();
+        data.clear_all();
         ctx.request_paint();
     }).lens(AppData::grid).padding((5., 5.));
 
@@ -114,13 +113,22 @@ fn make_ui_simple() -> impl Widget<AppData> {
     })
     .on_click(|ctx, data: &mut GridNodes, _: &Env| {
         match data{
-            GridNodes::Wall => *data = GridNodes::StartNode(1),
-            GridNodes::StartNode(1) => *data = GridNodes::EndNode(1),
-            GridNodes::EndNode(1) => *data = GridNodes::Wall,
+            GridNodes::Wall => {
+                *data = GridNodes::StartNode(1);
+                ctx.submit_command(START_NODE_TOOL.to(ID_ONE))
+            },
+            GridNodes::StartNode(1) => {
+                *data = GridNodes::EndNode(1);
+                ctx.submit_command(END_NODE_TOOL.to(ID_ONE))
+            },
+            GridNodes::EndNode(1) => {
+                *data = GridNodes::Wall;
+                ctx.submit_command(WALL_TOOL.to(ID_ONE))
+            },
             _ => ()
         };
         ctx.request_layout();
-    }).lens(AppData::tool).padding((5., 5.));
+    }).lens(AppData::selected_tool).padding((5., 5.));
 
     let path_button = Button::new(|data: &PathAlgorithms, _: &Env| match data {
         PathAlgorithms::Astar => "A star".into(),

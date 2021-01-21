@@ -1,11 +1,15 @@
 // TODO Implement infinite zoom and pan functionallity. See scroll example and clipBox documentation
 // FIXME Partial repaint
-use druid::{
-    Env, Event, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, MouseButton, PaintCtx, RenderContext,
-    UpdateCtx, Widget, BoxConstraints, Data, Lens
-};
+// Handle Tool Chain using commands
+use druid::{BoxConstraints, Data, Env, Event, EventCtx, LayoutCtx, Lens, LifeCycle, LifeCycleCtx, MouseButton, PaintCtx, RenderContext, Selector, UpdateCtx, Widget, text::selection};
 
 use druid::{Color, Point, Rect, Size, im::HashMap};
+
+
+pub const GRID_AXIS: Selector = Selector::new("toggle-grid");
+pub const WALL_TOOL: Selector = Selector::new("wall-tool");
+pub const START_NODE_TOOL: Selector = Selector::new("start-node-tool");
+pub const END_NODE_TOOL: Selector = Selector::new("end-node-tool");
 
 #[derive(Clone, PartialEq, Data)]
 enum Interaction {
@@ -18,8 +22,8 @@ enum Interaction {
 
 #[derive(Clone, Data, Copy, PartialEq, Debug, Hash, Eq)]
 pub struct GridPos {   
-    row: usize,
-    col: usize,
+    pub row: usize,
+    pub col: usize,
 }
 
 
@@ -35,11 +39,11 @@ pub enum GridNodes {
     ChosenPath(i32),
 }
 
-#[derive(Clone, PartialEq, Data, Lens)]
-pub struct Grid {
-    storage: HashMap<GridPos, GridNodes>,
-}
-
+//////////////////////////////////////////////////////////////////////////////////////
+//
+// Grid Widget
+//
+//////////////////////////////////////////////////////////////////////////////////////
 #[derive(Clone, PartialEq, Data, Lens)]
 pub struct GridWidget {
     rows: usize,
@@ -47,27 +51,10 @@ pub struct GridWidget {
     cell_size: Size,
     drawing: Interaction,
     show_grid_axis: bool,
-    color: Color,    
+    color: Color,
+    selected_tool: GridNodes
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
-//
-// Implementations
-//
-//////////////////////////////////////////////////////////////////////////////////////
-// GridWidget Implementations
-//////////////////////////////////////////////////////////////////////////////////////
-impl Grid {
-    pub fn new() -> Grid {
-        Grid {
-            storage: HashMap::new(),
-        }
-    }
-
-    pub fn clear(&mut self){
-        self.storage.clear();
-    }
-}
 impl GridWidget {
     pub fn new(color: Color, rows:usize, columns:usize) -> Self {
         GridWidget {
@@ -78,8 +65,9 @@ impl GridWidget {
                 height: 0.0,
             },
             drawing: Interaction::None,
-            show_grid_axis: true,
-            color: color,
+            show_grid_axis: true, // Need to handle this with Commands and Widget ID
+            color: color, // TODO Need color array
+            selected_tool: GridNodes::Wall,
         }
     }
 
@@ -89,12 +77,20 @@ impl GridWidget {
         if p.x < 0.0 || p.y < 0.0 || w0 == 0.0 || h0 == 0.0 {
             return None;
         }
-        let row = (p.x / w0) as usize;
-        let col = (p.y / h0) as usize;
-        if row >= self.columns || col >= self.rows {
+        let col = (p.x / w0) as usize;
+        let row = (p.y / h0) as usize;
+        if col >= self.columns || row >= self.rows {
             return None;
         }
         Some(GridPos { row, col })
+    }
+
+    fn invalidation_area (&self, pos: GridPos) -> Rect{
+        let point = Point {
+            x: self.cell_size.width * pos.col as f64,
+            y: self.cell_size.height * pos.row as f64,
+        };
+        Rect::from_origin_size(point, self.cell_size)
     }
 }
 
@@ -103,6 +99,20 @@ impl Widget<Grid> for GridWidget {
         match event {
             Event::WindowConnected => {
                 ctx.request_paint();
+                data.storage.insert(data.start_node, GridNodes::StartNode(1));
+                data.storage.insert(data.end_node, GridNodes::EndNode(1));
+            }
+
+            Event::Command(cmd) => {
+                if cmd.is(WALL_TOOL) {
+                    self.selected_tool = GridNodes::Wall;
+                } else if cmd.is(END_NODE_TOOL) {
+                    self.selected_tool = GridNodes::EndNode(1);
+                } else if cmd.is(START_NODE_TOOL){
+                    self.selected_tool = GridNodes::StartNode(1);
+                } else if cmd.is(GRID_AXIS) {
+                    self.show_grid_axis = !self.show_grid_axis;
+                }
             }
 
             Event::MouseDown(e) => {
@@ -110,25 +120,27 @@ impl Widget<Grid> for GridWidget {
                     let grid_pos_opt = self.grid_pos(e.pos);
                     grid_pos_opt.iter().for_each(|pos| {
                         if self.drawing == Interaction::None {
-                            if data.storage.contains_key(pos) {
+                            if data.storage.contains_key(pos) && data.storage.get(pos) == Some(&GridNodes::Wall) {
                                 data.storage.remove(pos);
                                 self.drawing = Interaction::Erasing
-                            } else {
-                                data.storage.insert(*pos, GridNodes::Wall);
-                                self.drawing = Interaction::Drawing
+                            } else if !data.storage.contains_key(pos) {
+                                if self.selected_tool == GridNodes::Wall {
+                                    data.storage.insert(*pos, GridNodes::Wall);
+                                    self.drawing = Interaction::Drawing
+                                } else if self.selected_tool == GridNodes::EndNode(1) {
+                                    data.storage.remove(&data.end_node);
+                                    ctx.request_paint_rect(self.invalidation_area(data.end_node));
+                                    data.end_node = *pos;
+                                    data.storage.insert(*pos, GridNodes::EndNode(1));
+                                } else if self.selected_tool == GridNodes::StartNode(1) {
+                                    data.storage.remove(&data.start_node);
+                                    ctx.request_paint_rect(self.invalidation_area(data.start_node));
+                                    data.start_node = *pos;
+                                    data.storage.insert(*pos, GridNodes::StartNode(1));
+                                }
                             }
+                            ctx.request_paint_rect(self.invalidation_area(*pos));
                         }
-
-                        let point = Point {
-                            x: self.cell_size.width * pos.row as f64,
-                            y: self.cell_size.height * pos.col as f64,
-                        };
-                        let rect = Rect::from_origin_size(point, self.cell_size);
-                        //println!("Event - Position - Invalidation Rectangle: {:?}", point);
-                        //println!("Event - Size - Invalidation Rectangle: {:?}", rect.size());
-                        //println!("Event - Size - Cell: {:?}\n================================", self.cell_size);
-                        ctx.request_paint_rect(rect);
-                        //ctx.request_paint();
                     });
                 }
             }
@@ -142,22 +154,13 @@ impl Widget<Grid> for GridWidget {
                     let grid_pos_opt = self.grid_pos(e.pos);
                     grid_pos_opt.iter().for_each(|pos| {
                         //println!("Event Move: {:?}", *pos);
-                        if self.drawing == Interaction::Drawing {
+                        if self.drawing == Interaction::Drawing && !data.storage.contains_key(pos){
                             data.storage.insert(*pos, GridNodes::Wall);
-                        } else if self.drawing == Interaction::Erasing {
+                        } else if self.drawing == Interaction::Erasing && data.storage.get(pos) == Some(&GridNodes::Wall) {
                             data.storage.remove(pos);
                         }
 
-                        let point = Point {
-                            x: self.cell_size.width * pos.row as f64,
-                            y: self.cell_size.height * pos.col as f64,
-                        };
-                        let rect = Rect::from_origin_size(point, self.cell_size);
-                        //println!("Event - Position - Invalidation Rectangle: {:?}", point);
-                        //println!("Event - Size - Invalidation Rectangle: {:?}", rect.size());
-                        //println!("Event - Size - Cell: {:?}\n================================", self.cell_size);
-                        ctx.request_paint_rect(rect);
-                        //ctx.request_paint();
+                        ctx.request_paint_rect(self.invalidation_area(*pos));
                     });
                 }
             }
@@ -168,8 +171,12 @@ impl Widget<Grid> for GridWidget {
     fn lifecycle(&mut self, _ctx: &mut LifeCycleCtx, _event: &LifeCycle, _data: &Grid, _env: &Env, ) {
     }
 
-    fn update(&mut self, _ctx: &mut UpdateCtx, _old_data: &Grid, _data: &Grid, _env: &Env) {
-        //ctx.request_paint();
+    fn update(&mut self, ctx: &mut UpdateCtx, _old_data: &Grid, data: &Grid, _env: &Env) {
+        if data.storage.len() == 2{
+            //data.storage.insert(self.start_node, GridNodes::StartNode(1));
+            //data.storage.insert(self.end_node, GridNodes::EndNode(1));
+            ctx.request_paint();
+        }    
     }
 
     // Maybe the issue when drawing a non square grid
@@ -197,16 +204,19 @@ impl Widget<Grid> for GridWidget {
         // Draw grid cells
         for (cell_pos, cell_type) in data.storage.iter(){
             let point = Point {
-                x: cell_size.width * cell_pos.row as f64,
-                y: cell_size.height * cell_pos.col as f64,
+                x: cell_size.width * cell_pos.col as f64,
+                y: cell_size.height * cell_pos.row as f64,
             };
 
             let rect = Rect::from_origin_size(point, cell_size);
             // Keep in mind that stroke get added to the size of the existing rectangle
             //ctx.stroke(rect, &Color::AQUA, 5.0);
 
-            if cell_type == &GridNodes::Wall {
-                ctx.fill(rect, &self.color);
+            match cell_type {
+                GridNodes::Wall => ctx.fill(rect, &self.color),
+                GridNodes::StartNode(_) => ctx.fill(rect, &Color::AQUA),
+                GridNodes::EndNode(_) => ctx.fill(rect, &Color::RED),
+                _ => (),
             }
         }
 
@@ -245,5 +255,57 @@ impl Widget<Grid> for GridWidget {
 
     fn type_name(&self) -> &'static str {
         std::any::type_name::<Self>()
+    }
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+//
+// Grid
+//
+//////////////////////////////////////////////////////////////////////////////////////
+#[derive(Clone, PartialEq, Data, Lens)]
+pub struct Grid {
+    storage: HashMap<GridPos, GridNodes>,
+    start_node: GridPos,
+    end_node: GridPos,
+}
+
+impl Grid {
+    pub fn new(start_node: GridPos, end_node: GridPos) -> Grid {
+        Grid {
+            storage: HashMap::new(),
+            start_node: start_node,
+            end_node: end_node,
+        }
+    }
+
+    pub fn clear_all(&mut self){
+        self.storage.clear();
+        self.storage.insert(self.start_node, GridNodes::StartNode(1));
+        self.storage.insert(self.end_node, GridNodes::EndNode(1));
+    }
+
+    pub fn clear_paths(&mut self){
+        unimplemented!()
+    }
+
+    pub fn add_node(&mut self, pos:GridPos, tool: GridNodes){
+        unimplemented!()
+    }
+
+    pub fn add_node_area(&mut self, pos: GridPos, row_n: usize, column_n: usize, tool: GridNodes){
+        unimplemented!()
+    }
+
+    pub fn remove_node(&mut self, pos:GridPos){
+        unimplemented!()
+    }
+
+    pub fn remove_node_area(&mut self, pos: GridPos, row_n: usize, column_n: usize, tool: GridNodes){
+        unimplemented!()
+    }
+
+    pub fn neighbours(&mut self){
+        unimplemented!()
     }
 }
