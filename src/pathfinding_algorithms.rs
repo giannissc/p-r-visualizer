@@ -1,16 +1,6 @@
 use druid::{Data, im::HashSet, im::Vector};
-use crate::pathfinding_types::*;
+use crate::data::pathfinding_types::*;
 
-#[derive(Data, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
-pub enum PathAlgorithms {
-    Astar,
-    Dijkstra,
-    GreedyBestFirstSearch,
-    BFS,
-    DFS,
-    Swarm,
-    JumpPoint,
-}
 #[derive(PartialEq, Copy, Clone)]
 pub enum AlgorithmState {
     INITIALIZATION,

@@ -1,7 +1,25 @@
 use druid::{Data, Lens};
 use druid::im::HashMap;
 use std::hash::{Hash, Hasher};
-use crate::distance_heuristics::Heuristics;
+use crate::data::distance_heuristics::Heuristics;
+
+#[derive(Data, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
+pub enum MazeAlgorithms {
+    Random,
+    Backtrace,
+    Recursive,
+}
+
+#[derive(Data, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
+pub enum PathAlgorithms {
+    Astar,
+    Dijkstra,
+    GreedyBestFirstSearch,
+    BFS,
+    DFS,
+    Swarm,
+    JumpPoint,
+}
 
 #[derive(Copy, Clone, Debug, Eq)]
 pub struct PathNodes {
