@@ -77,7 +77,7 @@ pub enum GridNodeType {
     StartNode(Net),
     TargetNode(Net),
     SteinerNode(Net),
-    FrontierNodes(Net), //Rename to visitedNodes
+    UnexploredNodes(Net), //Rename to visitedNodes
     ExploredNodes(Net), //Rename to visitedNodes
     ChosenPath(Net),
     

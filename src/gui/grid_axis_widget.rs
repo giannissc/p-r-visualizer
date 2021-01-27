@@ -223,7 +223,10 @@ impl Widget<Grid> for GridWidget {
             match cell_type {
                 GridNodeType::Wall => ctx.fill(rect, &self.color),
                 GridNodeType::StartNode(_) => ctx.fill(rect, &Color::AQUA),
-                GridNodeType::TargetNode(_) => ctx.fill(rect, &Color::RED),
+                GridNodeType::TargetNode(_) => ctx.fill(rect, &Color::PURPLE),
+                GridNodeType::UnexploredNodes(_) => ctx.fill(rect, &Color::rgb8(255, 191, 0)),
+                GridNodeType::ExploredNodes(_) => ctx.fill(rect, &Color::MAROON),
+                GridNodeType::ChosenPath(_) => ctx.fill(rect, &Color::GREEN),
                 _ => (),
             }
         }

@@ -1,8 +1,13 @@
 // TODO Configure rustfmt and clippy
-// TODO Implement custom patterns
-// TODO Refactor app structure
+// Implement add/remove nodes for grid struct with validation
+// Disable drawing when algorithm is running
+// TODO Redo construct() function
+// TODO Switch to self referential types
+// TODO Implement custom grid patterns 
+// Debug A*
+// Implement drop selection
 
-mod controllers;
+
 mod data;
 mod pathfinding_algorithms;
 mod maze_algorithms;
@@ -10,6 +15,7 @@ mod maze_algorithms;
 mod gui {
     pub mod grid_axis_widget;
     pub mod view;
+    pub mod controllers;
 }
 
 
@@ -34,12 +40,13 @@ fn main() {
         .window_size((1000.0, 500.0))
         .title(LocalizedString::new("Placement & Routing Experiments"));
     let data = AppData {
-        is_paused: true,
-        updates_per_second: 20.0,
+        is_paused: false,
+        is_running: false,
+        updates_per_second: 1.0,
         grid: Grid::new(GridNodePosition{row: 20, col: 10}, GridNodePosition{row:20, col:50}),
         selected_tool: GridNodeType::Wall,
-        path_algo: PathAlgorithms::Astar,
-        maze_algo: MazeAlgorithms::Random,
+        path_tool: PathAlgorithms::Astar,
+        maze_tool: MazeAlgorithms::Random,
         show_grid_lines: true,
     };
     AppLauncher::with_window(main_window)

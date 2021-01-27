@@ -1,4 +1,4 @@
-use druid::{Data, im::HashSet, im::Vector};
+use druid::im::{Vector, HashSet};
 use crate::data::pathfinding_types::*;
 
 #[derive(PartialEq, Copy, Clone)]
@@ -10,7 +10,6 @@ pub enum AlgorithmState {
 }
 
 pub struct PathAlgo {
-    grid: Grid,
     selected_algorithm: PathAlgorithms,
     is_bidirectional: bool,
     allow_diagonal: bool,
@@ -22,9 +21,8 @@ pub struct PathAlgo {
 
 
 impl PathAlgo {
-    pub fn new(grid: Grid) -> Self {
+    pub fn new() -> Self {
         PathAlgo {
-            grid: grid,
             selected_algorithm: PathAlgorithms::Astar,
             is_bidirectional: false,
             allow_diagonal: false,
@@ -40,9 +38,9 @@ impl PathAlgo {
     }
 
 
-    pub fn next_step(&mut self) -> AlgorithmState{
+    pub fn next_step(&mut self, grid: &Grid) -> AlgorithmState{
         if self.algorithm_state == AlgorithmState::INITIALIZATION {
-            self.open_list.insert(PathNodes::new(0, self.grid.end_node, self.grid.start_node, None)); // Step 1: Add the starting node to the open list
+            self.open_list.insert(PathNodes::new(0, grid.end_node, grid.start_node, None)); // Step 1: Add the starting node to the open list
             self.algorithm_state = AlgorithmState::RUNNING;           
         } else if self.algorithm_state == AlgorithmState::RUNNING {
             match self.get_min_cost_node(){
@@ -50,13 +48,13 @@ impl PathAlgo {
                 Some(current_node) => {
                     self.open_list.remove(&current_node); // Step 2: Remove lower cost node from the open list
                     //self.closed_list.insert(current_node); // Step 3: Add current node to the closed list
-                    for node in self.grid.neighbours_rectilinear(current_node.position.clone()).iter(){// Step 4: Generate list of neighbours
+                    for node in grid.neighbours_rectilinear(current_node.position.clone()).iter(){// Step 4: Generate list of neighbours
                         // Step 4.1: Ignore if it is not walkable (already checked that in neighbours function)
                         match node {
                             None => (), // Step 4.1: Node is not walkable
                             Some(neighbour_pos) => {
-                                let neighbour_node = PathNodes::new(&current_node.cost_from_start.clone() + 1, self.grid.end_node, *neighbour_pos, Some(current_node.position));
-                                if neighbour_node.position == self.grid.end_node {
+                                let neighbour_node = PathNodes::new(&current_node.cost_from_start.clone() + 1, grid.end_node, *neighbour_pos, Some(current_node.position));
+                                if neighbour_node.position == grid.end_node {
                                     self.path_list.push_front(neighbour_node);
                                     self.construct_path(neighbour_node);
                                     self.algorithm_state = AlgorithmState::FINISHED;
@@ -111,17 +109,34 @@ impl PathAlgo {
     }
 
     fn construct_path(&mut self, final_node: PathNodes) {
-        //let current_node = &mut self.path_list.get(0).unwrap(); // Need to install the nightly compiler for the feature to work
+        println!("Constructing Path");
+        let current_node = final_node;
 
         loop {
-            match final_node.parent {
+            println!("Loop");
+            match current_node.parent {
                 None => return,
                 Some(parent) => {
+                    println!("{:?}", parent);
                     self.path_list.push_front(self.closed_list.remove(&PathNodes::reduced(parent)).unwrap());
                 }
             };
         }
 
+    }
+
+    pub fn get_open_nodes(&self) -> &HashSet<PathNodes> {
+        return &self.open_list;
+
+    }
+
+    pub fn get_closed_nodes(&self) -> &HashSet<PathNodes> {
+        return &self.closed_list;
+
+    }
+
+    pub fn get_path_nodes(&self) -> &Vector<PathNodes> {
+        return &self.path_list;
     }
 
 }

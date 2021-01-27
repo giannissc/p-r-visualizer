@@ -1,10 +1,10 @@
 
-use druid::{ theme, AppLauncher, LocalizedString, WidgetExt, WindowDesc, Env, Widget, Color, EventCtx };
+use druid::{WidgetExt, Env, Widget, EventCtx };
 use druid::widget::{Button, Flex, Label, MainAxisAlignment, CrossAxisAlignment, Slider, Checkbox,};
-use druid_widget_nursery::{DropdownSelect};
+//use druid_widget_nursery::{DropdownSelect};
 
 use super::grid_axis_widget::{GridWidget, WALL_TOOL, END_NODE_TOOL, START_NODE_TOOL, TOGGLE_GRID_AXIS};
-use crate::controllers::TimerController;
+use crate::gui::controllers::TimerController;
 use crate::data::*;
 use crate::pathfinding_types::*;
 use crate::PathAlgorithms;
@@ -62,15 +62,19 @@ pub fn make_ui() -> impl Widget<AppData> {
 }
 
 fn make_stop_button() -> impl Widget<AppData> {
-    Button::new("⏹")
-    .on_click(|_ctx, _data: &mut AppData, _: &Env| {
-        //ctx.request_layout();
-    }).padding((5., 5.))
+    Button::new(|data: &bool, _: &Env| match data {
+        true => "⏹️".into(),
+        false => "▶️".into(),
+    })
+    .on_click(|ctx, data: &mut bool, _: &Env| {
+        *data = !*data;
+        ctx.request_layout();
+    }).lens(AppData::is_running).padding((5., 5.))
 }
 
 fn make_pause_button() -> impl Widget<AppData> {
     Button::new(|data: &bool, _: &Env| match data {
-        true => "▶".into(),
+        true => "⏯".into(),
         false => "⏸".into(),
     })
     .on_click(|ctx, data: &mut bool, _: &Env| {
@@ -155,7 +159,7 @@ fn make_path_button() -> impl Widget<AppData> {
             _ => ()
         };
         ctx.request_layout();
-    }).lens(AppData::path_algo).padding((5., 5.))
+    }).lens(AppData::path_tool).padding((5., 5.))
 }
 
 fn make_maze_button() -> impl Widget<AppData> {
@@ -163,17 +167,15 @@ fn make_maze_button() -> impl Widget<AppData> {
         MazeAlgorithms::Random => "Random".into(),
         MazeAlgorithms::Recursive => "Recursive".into(),
         MazeAlgorithms::Backtrace => "Backtrace".into(),
-        _ => "".into(),
     })
     .on_click(|ctx, data: &mut MazeAlgorithms, _: &Env| {
         match data{
             MazeAlgorithms::Random => *data = MazeAlgorithms::Recursive,
             MazeAlgorithms::Recursive => *data = MazeAlgorithms::Backtrace,
             MazeAlgorithms::Backtrace => *data = MazeAlgorithms::Random,
-            _ => ()
         };
         ctx.request_layout();
-    }).lens(AppData::maze_algo).padding((5., 5.)) 
+    }).lens(AppData::maze_tool).padding((5., 5.)) 
 }
 
 fn make_grid_lines_button() -> impl Widget<AppData> {
