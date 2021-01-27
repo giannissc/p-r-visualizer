@@ -5,17 +5,22 @@
 mod grid_axis;
 mod pathfinding_algorithms;
 mod maze_algorithms;
+mod distance_heuristics;
+mod pathfinding_types;
+mod controllers;
 
-use grid_axis::{Grid, GridNodes, GridPos, GridWidget, WALL_TOOL, END_NODE_TOOL, START_NODE_TOOL, TOGGLE_GRID_AXIS};
-
+use grid_axis::{GridWidget, WALL_TOOL, END_NODE_TOOL, START_NODE_TOOL, TOGGLE_GRID_AXIS};
+use crate::pathfinding_types::*;
+use crate::controllers::TimerController;
 
 // Druid imports
-use druid::{EventCtx, lens, widget::{Button, Flex, Label, MainAxisAlignment, CrossAxisAlignment, Slider, Checkbox, WidgetId}};
+use druid::{EventCtx, widget::{Button, Flex, Label, MainAxisAlignment, CrossAxisAlignment, Slider, Checkbox, WidgetId}};
 use druid::{
     theme, AppLauncher, Data, Lens, LocalizedString, WidgetExt,
     WindowDesc, Env, Widget, Color,
 };
 use maze_algorithms::MazeAlgorithms;
+use druid_widget_nursery::{DropdownSelect};
 use pathfinding_algorithms::PathAlgorithms;
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -33,15 +38,20 @@ const ID_ONE: WidgetId = WidgetId::reserved(1);
 //////////////////////////////////////////////////////////////////////////////////////
 // Application State
 #[derive(Clone, Data, Lens)]
-struct AppData {
-    pause_algo: bool,
-    start_algo: bool,
+pub struct AppData {
+    pub is_paused: bool,
     updates_per_second: f64,
-    grid: Grid,
-    selected_tool: GridNodes,
+    pub grid: Grid,
+    selected_tool: GridNodeType,
     path_algo: PathAlgorithms,
     maze_algo: MazeAlgorithms,
     show_grid_lines: bool
+}
+
+impl AppData {
+    pub fn iter_interval(&self) -> u64 {
+        (1000. / self.updates_per_second) as u64
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -55,11 +65,10 @@ fn main() {
         .window_size((1000.0, 500.0))
         .title(LocalizedString::new("Placement & Routing Experiments"));
     let data = AppData {
-        pause_algo: true,
-        start_algo: false,
+        is_paused: true,
         updates_per_second: 20.0,
-        grid: Grid::new(GridPos{row: 20, col: 10}, GridPos{row:20, col:50}),
-        selected_tool: GridNodes::Wall,
+        grid: Grid::new(GridNodePosition{row: 20, col: 10}, GridNodePosition{row:20, col:50}),
+        selected_tool: GridNodeType::Wall,
         path_algo: PathAlgorithms::Astar,
         maze_algo: MazeAlgorithms::Random,
         show_grid_lines: true,
@@ -94,8 +103,10 @@ fn make_ui() -> impl Widget<AppData> {
                     Flex::row()
                         .with_flex_child(
                             Flex::row()
-                                    .with_flex_child(make_start_button(), 1.0,)
+                                    .with_flex_child(make_stop_button(), 1.0,)
                                     .with_flex_child(make_pause_button(), 1.0,)
+                                    .with_flex_child(make_previous_button(), 1.0)
+                                    .with_flex_child(make_next_button(), 1.0)
                                     .with_flex_child(make_clear_button(), 1.0,)
                                     .with_flex_child(make_tool_button(), 1.0)
                                     .with_flex_child(make_path_button(), 1.0)
@@ -123,28 +134,39 @@ fn make_ui() -> impl Widget<AppData> {
                         .padding(8.0),
                 ).background(BACKGROUND),     
             ).main_axis_alignment(MainAxisAlignment::SpaceBetween).cross_axis_alignment(CrossAxisAlignment::Center)
+            .controller(TimerController::new())
 }
 
-fn make_start_button() -> impl Widget<AppData> {
-    Button::new(|data: &bool, _: &Env| match data {
-        true => "Stop".into(),
-        false => "Start".into(),
-    })
-    .on_click(|ctx, data: &mut bool, _: &Env| {
-        *data = !*data;
-        ctx.request_layout();
-    }).lens(AppData::start_algo).padding((5., 5.))
+fn make_stop_button() -> impl Widget<AppData> {
+    Button::new("⏹")
+    .on_click(|_ctx, _data: &mut AppData, _: &Env| {
+        //ctx.request_layout();
+    }).padding((5., 5.))
 }
 
 fn make_pause_button() -> impl Widget<AppData> {
     Button::new(|data: &bool, _: &Env| match data {
-        true => "Resume".into(),
-        false => "Pause".into(),
+        true => "▶".into(),
+        false => "⏸".into(),
     })
     .on_click(|ctx, data: &mut bool, _: &Env| {
         *data = !*data;
         ctx.request_layout();
-    }).lens(AppData::pause_algo).padding((5., 5.))
+    }).lens(AppData::is_paused).padding((5., 5.))
+}
+
+fn make_previous_button() -> impl Widget<AppData> {
+    Button::new("⏮")
+    .on_click(|_ctx, _data: &mut AppData, _: &Env| {
+        //ctx.request_layout();
+    }).padding((5., 5.))
+}
+
+fn make_next_button() -> impl Widget<AppData> {
+    Button::new("⏭")
+    .on_click(|_ctx, _data: &mut AppData, _: &Env| {
+        //ctx.request_layout();
+    }).padding((5., 5.))
 }
 
 fn make_clear_button() -> impl Widget<AppData> {
@@ -156,24 +178,24 @@ fn make_clear_button() -> impl Widget<AppData> {
 }
 
 fn make_tool_button() -> impl Widget<AppData> {
-    Button::new(|data: &GridNodes, _: &Env| match data {
-        GridNodes::Wall => "Wall".into(),
-        GridNodes::StartNode(1) => "StartNode".into(),
-        GridNodes::EndNode(1) => "EndNode".into(),
+    Button::new(|data: &GridNodeType, _: &Env| match data {
+        GridNodeType::Wall => "Wall".into(),
+        GridNodeType::StartNode(1) => "StartNode".into(),
+        GridNodeType::TargetNode(1) => "EndNode".into(),
         _ => "".into(),
     })
-    .on_click(|ctx, data: &mut GridNodes, _: &Env| {
+    .on_click(|ctx, data: &mut GridNodeType, _: &Env| {
         match data{
-            GridNodes::Wall => {
-                *data = GridNodes::StartNode(1);
+            GridNodeType::Wall => {
+                *data = GridNodeType::StartNode(1);
                 ctx.submit_command(START_NODE_TOOL.to(ID_ONE))
             },
-            GridNodes::StartNode(1) => {
-                *data = GridNodes::EndNode(1);
+            GridNodeType::StartNode(1) => {
+                *data = GridNodeType::TargetNode(1);
                 ctx.submit_command(END_NODE_TOOL.to(ID_ONE))
             },
-            GridNodes::EndNode(1) => {
-                *data = GridNodes::Wall;
+            GridNodeType::TargetNode(1) => {
+                *data = GridNodeType::Wall;
                 ctx.submit_command(WALL_TOOL.to(ID_ONE))
             },
             _ => ()
@@ -182,18 +204,30 @@ fn make_tool_button() -> impl Widget<AppData> {
     }).lens(AppData::selected_tool).padding((5., 5.))
 }
 
+/* 
+fn make_path_dropdown() -> impl Widget<AppData> {
+    DropdownSelect::build_widget(vec![
+        ("A star", PathAlgorithms::Astar),
+        ("Dijkstra", PathAlgorithms::Dijkstra),
+        ("Swarm", PathAlgorithms::Swarm),
+        ("Jump Point", PathAlgorithms::JumpPoint),
+    ])
+}
+
+*/
+
 fn make_path_button() -> impl Widget<AppData> {
     Button::new(|data: &PathAlgorithms, _: &Env| match data {
         PathAlgorithms::Astar => "A star".into(),
         PathAlgorithms::Dijkstra => "Dijkstra".into(),
-        PathAlgorithms::BidirectionalDijkstra => "Bidirectional Dijkstra".into(),
+        PathAlgorithms::Swarm => "Swarm".into(),
         _ => "".into(),
     })
     .on_click(|ctx, data: &mut PathAlgorithms, _: &Env| {
         match data{
             PathAlgorithms::Astar => *data = PathAlgorithms::Dijkstra,
-            PathAlgorithms::Dijkstra => *data = PathAlgorithms::BidirectionalDijkstra,
-            PathAlgorithms::BidirectionalDijkstra => *data = PathAlgorithms::Astar,
+            PathAlgorithms::Dijkstra => *data = PathAlgorithms::Swarm,
+            PathAlgorithms::Swarm => *data = PathAlgorithms::Astar,
             _ => ()
         };
         ctx.request_layout();
