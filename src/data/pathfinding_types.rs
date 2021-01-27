@@ -67,16 +67,16 @@ impl Hash for PathNodes {
 
 // Add wight and bomb nodes?
 type Net = i32;
-type Weight = i32;
+//type Weight = i32;
 #[derive(Data, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
 
 pub enum GridNodeType {
     
     Wall,
-    WeightedNode(Weight),
+    //WeightedNode(Weight),
     StartNode(Net),
     TargetNode(Net),
-    SteinerNode(Net),
+    //SteinerNode(Net),
     UnexploredNodes(Net), //Rename to visitedNodes
     ExploredNodes(Net), //Rename to visitedNodes
     ChosenPath(Net),

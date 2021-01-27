@@ -3,7 +3,7 @@ use druid::{WidgetExt, Env, Widget, EventCtx };
 use druid::widget::{Button, Flex, Label, MainAxisAlignment, CrossAxisAlignment, Slider, Checkbox,};
 //use druid_widget_nursery::{DropdownSelect};
 
-use super::grid_axis_widget::{GridWidget, WALL_TOOL, END_NODE_TOOL, START_NODE_TOOL, TOGGLE_GRID_AXIS};
+use super::grid_axis_widget::{GridWidget, WALL_TOOL, END_NODE_TOOL, START_NODE_TOOL, TOGGLE_GRID_AXIS, TOGGLE_DRAWING};
 use crate::gui::controllers::TimerController;
 use crate::data::*;
 use crate::pathfinding_types::*;
@@ -27,7 +27,7 @@ pub fn make_ui() -> impl Widget<AppData> {
                     Flex::row()
                         .with_flex_child(
                             Flex::row()
-                                    .with_flex_child(make_stop_button(), 1.0,)
+                                    .with_flex_child(make_run_button(), 1.0,)
                                     .with_flex_child(make_pause_button(), 1.0,)
                                     .with_flex_child(make_previous_button(), 1.0)
                                     .with_flex_child(make_next_button(), 1.0)
@@ -61,13 +61,14 @@ pub fn make_ui() -> impl Widget<AppData> {
             .controller(TimerController::new())
 }
 
-fn make_stop_button() -> impl Widget<AppData> {
+fn make_run_button() -> impl Widget<AppData> {
     Button::new(|data: &bool, _: &Env| match data {
         true => "⏹️".into(),
         false => "▶️".into(),
     })
     .on_click(|ctx, data: &mut bool, _: &Env| {
         *data = !*data;
+        ctx.submit_command(TOGGLE_DRAWING.to(ID_ONE));
         ctx.request_layout();
     }).lens(AppData::is_running).padding((5., 5.))
 }

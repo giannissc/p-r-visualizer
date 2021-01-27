@@ -1,6 +1,5 @@
 // TODO Configure rustfmt and clippy
 // Implement add/remove nodes for grid struct with validation
-// Disable drawing when algorithm is running
 // TODO Redo construct() function
 // TODO Switch to self referential types
 // TODO Implement custom grid patterns 

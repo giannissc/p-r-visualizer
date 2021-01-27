@@ -18,7 +18,7 @@ pub struct NodeTypesInternal {
 }
 */
 
-use druid::{BoxConstraints, Data, Env, Event, EventCtx, LayoutCtx, Lens, LifeCycle, LifeCycleCtx, MouseButton, PaintCtx, RenderContext, Selector, UpdateCtx, Widget};
+use druid::{BoxConstraints, Data, Env, Event, EventCtx, LayoutCtx, Lens, LifeCycle, LifeCycleCtx, MouseButton, PaintCtx, RenderContext, Selector, UpdateCtx, Widget, text::Selection};
 use druid::{Color, Point, Rect, Size};
 use crate::pathfinding_types::*;
 
@@ -27,6 +27,7 @@ pub const TOGGLE_GRID_AXIS: Selector = Selector::new("toggle-grid");
 pub const WALL_TOOL: Selector = Selector::new("wall-tool");
 pub const START_NODE_TOOL: Selector = Selector::new("start-node-tool");
 pub const END_NODE_TOOL: Selector = Selector::new("end-node-tool");
+pub const TOGGLE_DRAWING: Selector =  Selector::new("toggle-drawing");
 
 #[derive(Clone, PartialEq, Data)]
 enum Interaction {
@@ -34,7 +35,7 @@ enum Interaction {
     Drawing,
     Erasing,
     //Panning,
-    //Locked,
+    LockedUI,
 }
 
 
@@ -110,6 +111,12 @@ impl Widget<Grid> for GridWidget {
                 } else if cmd.is(TOGGLE_GRID_AXIS) {
                     self.show_grid_axis = !self.show_grid_axis;
                     ctx.request_paint();
+                } else if cmd.is(TOGGLE_DRAWING) {
+                    if self.drawing == Interaction::None {
+                        self.drawing = Interaction::LockedUI
+                    } else if self.drawing == Interaction::LockedUI {
+                        self.drawing = Interaction::None
+                    }
                 }
             }
 
@@ -143,12 +150,12 @@ impl Widget<Grid> for GridWidget {
                 }
             }
             Event::MouseUp(e) => {
-                if e.button == MouseButton::Left {
+                if e.button == MouseButton::Left && self.drawing != Interaction::LockedUI {
                     self.drawing = Interaction::None;
                 }
             }
             Event::MouseMove(e) => {
-                if self.drawing != Interaction::None {
+                if self.drawing != Interaction::LockedUI {
                     let grid_pos_opt = self.grid_pos(e.pos);
                     grid_pos_opt.iter().for_each(|pos| {
                         //println!("Event Move: {:?}", *pos);
