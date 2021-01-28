@@ -5,6 +5,7 @@ use crate::data::pathfinding_types::*;
 pub enum AlgorithmState {
     INITIALIZATION,
     RUNNING,
+    PATH_CONSTRUCTION,
     FINISHED,
     FAILED,
 }
@@ -17,6 +18,8 @@ pub struct PathAlgo {
     open_list: HashSet<PathNodes>,
     closed_list: HashSet<PathNodes>,
     path_list: Vector<PathNodes>,
+    current_path_node: PathNodes, 
+
 }
 
 
@@ -29,7 +32,8 @@ impl PathAlgo {
             algorithm_state: AlgorithmState::INITIALIZATION,
             open_list: HashSet::new(),
             closed_list: HashSet::new(),
-            path_list: Vector::new()
+            path_list: Vector::new(), 
+            current_path_node: PathNodes::empty(), 
         }
     }
 
@@ -55,10 +59,8 @@ impl PathAlgo {
                             Some(neighbour_pos) => {
                                 let neighbour_node = PathNodes::new(&current_node.cost_from_start + 1, grid.end_node, *neighbour_pos, Some(current_node.position));
                                 if neighbour_node.position == grid.end_node {
-                                    self.path_list.push_front(neighbour_node);
-                                    self.construct_path(neighbour_node);
-                                    self.algorithm_state = AlgorithmState::FINISHED;
-                                    return self.algorithm_state;
+                                    self.current_path_node = neighbour_node;
+                                    self.algorithm_state = AlgorithmState::PATH_CONSTRUCTION;
                                 }
 
                                 if !self.closed_list.contains(&neighbour_node) { // Step 4.1: Node is not in closed list either.
@@ -79,6 +81,8 @@ impl PathAlgo {
                 }           
             }
 
+        } else if self.algorithm_state == AlgorithmState::PATH_CONSTRUCTION {
+            self.construct_path();
         }
         self.algorithm_state
     }
@@ -108,22 +112,21 @@ impl PathAlgo {
         min_node
     }
 
-    fn construct_path(&mut self, final_node: PathNodes) {
+    fn construct_path(&mut self) {
         println!("Constructing Path");
-        let current_node = final_node;
-
-        loop {
-            println!("Loop");
-            match current_node.parent {
-                None => return,
-                Some(parent) => {
-                    println!("{:?}", parent);
-                    self.path_list.push_front(self.closed_list.remove(&PathNodes::reduced(parent)).unwrap());
-                }
-            };
+        let mut current_node = self.current_path_node;
+        self.path_list.push_front(current_node);
+        //println!("Current node: {:?}", current_node);         
+        let parent_node = self.closed_list.remove(&PathNodes::reduced(current_node.parent.unwrap())).unwrap();
+        //println!("Parent node: {:?}", parent_node); 
+        
+        if parent_node.parent == None {
+            self.algorithm_state = AlgorithmState::FINISHED;
+        } else {
+            self.current_path_node = parent_node;
         }
-
     }
+
 
     pub fn get_open_nodes(&self) -> &HashSet<PathNodes> {
         return &self.open_list;

@@ -50,7 +50,7 @@ pub fn make_ui() -> impl Widget<AppData> {
                         )
                         .with_flex_child(
                             Slider::new()
-                                .with_range(0.2, 20.0)
+                                .with_range(0.2, 100.0)
                                 .expand_width()
                                 .lens(AppData::updates_per_second),
                             1.,

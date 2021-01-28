@@ -51,6 +51,17 @@ impl PathNodes {
             parent: None,
         }
     }
+
+    pub fn empty() -> Self {
+        PathNodes {
+            cost_from_start: 0,
+            cost_to_target: 0,
+            total_cost: 0,
+            position: GridNodePosition{row: 0, col: 0},
+            parent: None,
+        }
+
+    }
 }
 
 impl PartialEq for PathNodes {

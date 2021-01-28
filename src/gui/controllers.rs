@@ -2,7 +2,7 @@ use druid::{widget::Controller, Env, EventCtx, Widget, TimerToken, Event};
 use std::time::{Duration, Instant};
 
 use crate::{AppData};
-use crate::pathfinding_algorithms::PathAlgo;
+use crate::pathfinding_algorithms::*;
 use crate::data::pathfinding_types::*;
 
 pub struct TimerController {
@@ -35,8 +35,10 @@ impl <W: Widget<AppData>> Controller<AppData, W> for TimerController {
                 if *id == self.timer_id {
                     if !data.is_paused && data.is_running { // Run the algorithm
                         
-                        println!("Algorithm running");
-                        self.path_algo.next_step(&data.grid);
+                        //println!("Algorithm running");
+                        if self.path_algo.next_step(&data.grid) == AlgorithmState::FINISHED {
+                            data.is_running = false;
+                        }
 
                         for node in self.path_algo.get_open_nodes().iter(){
                             data.grid.add_node(&node.position, GridNodeType::UnexploredNodes(1));

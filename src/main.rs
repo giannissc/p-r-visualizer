@@ -1,9 +1,13 @@
 // TODO Configure rustfmt and clippy
 // TODO Redo construct() function
 // TODO Switch to self referential types
-// TODO Implement custom grid patterns 
-// Debug A*
+// TODO Implement custom grid patterns
 // Implement drop selection
+// Add selection for heuristic
+// Add bidirectional checkbox
+// Add diagonal checkbox
+// Implement Maze algorithm
+// Have algorithms run in their own thread
 
 
 mod data;
