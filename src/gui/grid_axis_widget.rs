@@ -18,7 +18,7 @@ pub struct NodeTypesInternal {
 }
 */
 
-use druid::{BoxConstraints, Data, Env, Event, EventCtx, LayoutCtx, Lens, LifeCycle, LifeCycleCtx, MouseButton, PaintCtx, RenderContext, Selector, UpdateCtx, Widget, text::Selection};
+use druid::{BoxConstraints, Data, Env, Event, EventCtx, LayoutCtx, Lens, LifeCycle, LifeCycleCtx, MouseButton, PaintCtx, RenderContext, Selector, UpdateCtx, Widget,};
 use druid::{Color, Point, Rect, Size};
 use crate::pathfinding_types::*;
 

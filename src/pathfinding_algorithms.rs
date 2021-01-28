@@ -47,13 +47,13 @@ impl PathAlgo {
                 None => {self.algorithm_state = AlgorithmState::FAILED},
                 Some(current_node) => {
                     self.open_list.remove(&current_node); // Step 2: Remove lower cost node from the open list
-                    //self.closed_list.insert(current_node); // Step 3: Add current node to the closed list
-                    for node in grid.neighbours_rectilinear(current_node.position.clone()).iter(){// Step 4: Generate list of neighbours
+                    self.closed_list.insert(current_node); // Step 3: Add current node to the closed list
+                    for node in grid.neighbours_rectilinear(current_node.position).iter(){// Step 4: Generate list of neighbours
                         // Step 4.1: Ignore if it is not walkable (already checked that in neighbours function)
                         match node {
                             None => (), // Step 4.1: Node is not walkable
                             Some(neighbour_pos) => {
-                                let neighbour_node = PathNodes::new(&current_node.cost_from_start.clone() + 1, grid.end_node, *neighbour_pos, Some(current_node.position));
+                                let neighbour_node = PathNodes::new(&current_node.cost_from_start + 1, grid.end_node, *neighbour_pos, Some(current_node.position));
                                 if neighbour_node.position == grid.end_node {
                                     self.path_list.push_front(neighbour_node);
                                     self.construct_path(neighbour_node);

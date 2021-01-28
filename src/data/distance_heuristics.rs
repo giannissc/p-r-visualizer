@@ -8,7 +8,7 @@ pub enum Heuristics {
 
 impl Heuristics {
     pub fn target_cost(current: GridNodePosition, target: GridNodePosition) -> i64 {
-        Heuristics::manhattan_cost(current, target)
+        Heuristics::euclidean_cost(current, target)
     }
     
     fn manhattan_cost(current: GridNodePosition, target: GridNodePosition) -> i64{
