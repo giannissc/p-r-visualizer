@@ -1,6 +1,5 @@
 // TODO Configure rustfmt and clippy
-// TODO Redo construct() function
-// TODO Switch to self referential types
+// TODO Switch to self referential types?
 // TODO Implement custom grid patterns
 // Implement drop selection
 // Add selection for heuristic
