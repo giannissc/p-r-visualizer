@@ -35,19 +35,19 @@ impl <W: Widget<AppData>> Controller<AppData, W> for TimerController {
                 if *id == self.timer_id {
                     if !data.is_paused && data.is_running { // Run the algorithm
                         
-                        println!("Not paused");
+                        println!("Algorithm running");
                         self.path_algo.next_step(&data.grid);
 
                         for node in self.path_algo.get_open_nodes().iter(){
-                            data.grid.storage.insert(node.position, GridNodeType::UnexploredNodes(1));
+                            data.grid.add_node(&node.position, GridNodeType::UnexploredNodes(1));
                         }
 
                         for node in self.path_algo.get_closed_nodes().iter(){
-                            data.grid.storage.insert(node.position, GridNodeType::ExploredNodes(1));                            
+                            data.grid.add_node(&node.position, GridNodeType::ExploredNodes(1));                            
                         }
 
                         for node in self.path_algo.get_path_nodes().iter(){
-                            data.grid.storage.insert(node.position, GridNodeType::ChosenPath(1));                            
+                            data.grid.add_node(&node.position, GridNodeType::ChosenPath(1));                            
                         }
 
                         ctx.request_paint(); // Change to partial paint?
@@ -55,7 +55,6 @@ impl <W: Widget<AppData>> Controller<AppData, W> for TimerController {
                     let deadline = Duration::from_millis(data.iter_interval());
                     self.last_update = Instant::now();
                     self.timer_id = ctx.request_timer(deadline);
-                    println!("Deadline: {:?}", deadline);
                 }
             }
 

@@ -25,6 +25,7 @@ use crate::pathfinding_types::*;
 
 pub const TOGGLE_GRID_AXIS: Selector = Selector::new("toggle-grid");
 pub const WALL_TOOL: Selector = Selector::new("wall-tool");
+pub const ERASE_TOOL: Selector = Selector::new("erase-tool");
 pub const START_NODE_TOOL: Selector = Selector::new("start-node-tool");
 pub const END_NODE_TOOL: Selector = Selector::new("end-node-tool");
 pub const TOGGLE_DRAWING: Selector =  Selector::new("toggle-drawing");
@@ -33,7 +34,6 @@ pub const TOGGLE_DRAWING: Selector =  Selector::new("toggle-drawing");
 enum Interaction {
     None,
     Drawing,
-    Erasing,
     //Panning,
     LockedUI,
 }
@@ -104,6 +104,8 @@ impl Widget<Grid> for GridWidget {
             Event::Command(cmd) => {
                 if cmd.is(WALL_TOOL) {
                     self.selected_tool = GridNodeType::Wall;
+                } else if cmd.is(ERASE_TOOL) {
+                    self.selected_tool = GridNodeType::Empty;
                 } else if cmd.is(END_NODE_TOOL) {
                     self.selected_tool = GridNodeType::TargetNode(1);
                 } else if cmd.is(START_NODE_TOOL){
@@ -124,27 +126,21 @@ impl Widget<Grid> for GridWidget {
                 if e.button == MouseButton::Left {
                     let grid_pos_opt = self.grid_pos(e.pos);
                     grid_pos_opt.iter().for_each(|pos| {
+
                         if self.drawing == Interaction::None {
-                            if data.storage.contains_key(pos) && data.storage.get(pos) == Some(&GridNodeType::Wall) {
-                                data.storage.remove(pos);
-                                self.drawing = Interaction::Erasing
-                            } else if !data.storage.contains_key(pos) {
-                                if self.selected_tool == GridNodeType::Wall {
-                                    data.storage.insert(*pos, GridNodeType::Wall);
-                                } else if self.selected_tool == GridNodeType::TargetNode(1) {
-                                    data.storage.remove(&data.end_node);
+                            if self.selected_tool == GridNodeType::Empty {
+                                data.remove_node(pos);
+                            } else {
+                                if self.selected_tool == GridNodeType::TargetNode(1) {
                                     ctx.request_paint_rect(self.invalidation_area(data.end_node));
-                                    data.end_node = *pos;
-                                    data.storage.insert(*pos, GridNodeType::TargetNode(1));
                                 } else if self.selected_tool == GridNodeType::StartNode(1) {
-                                    data.storage.remove(&data.start_node);
                                     ctx.request_paint_rect(self.invalidation_area(data.start_node));
-                                    data.start_node = *pos;
-                                    data.storage.insert(*pos, GridNodeType::StartNode(1));
                                 }
-                                self.drawing = Interaction::Drawing
+                                data.add_node(pos, self.selected_tool);
                             }
+                             
                             ctx.request_paint_rect(self.invalidation_area(*pos));
+                            self.drawing = Interaction::Drawing;
                         }
                     });
                 }
@@ -155,28 +151,23 @@ impl Widget<Grid> for GridWidget {
                 }
             }
             Event::MouseMove(e) => {
-                if self.drawing != Interaction::LockedUI {
+                if self.drawing != Interaction::LockedUI || self.drawing != Interaction::None {
                     let grid_pos_opt = self.grid_pos(e.pos);
                     grid_pos_opt.iter().for_each(|pos| {
                         //println!("Event Move: {:?}", *pos);
-                        if self.drawing == Interaction::Drawing && !data.storage.contains_key(pos){
-                            if self.selected_tool == GridNodeType::Wall {
-                                data.storage.insert(*pos, GridNodeType::Wall);
-                            } else if self.selected_tool == GridNodeType::TargetNode(1) {
-                                data.storage.remove(&data.end_node);
-                                ctx.request_paint_rect(self.invalidation_area(data.end_node));
-                                data.end_node = *pos;
-                                data.storage.insert(*pos, GridNodeType::TargetNode(1));
-                            } else if self.selected_tool == GridNodeType::StartNode(1) {
-                                data.storage.remove(&data.start_node);
-                                ctx.request_paint_rect(self.invalidation_area(data.start_node));
-                                data.start_node = *pos;
-                                data.storage.insert(*pos, GridNodeType::StartNode(1));
-                            }
-                        } else if self.drawing == Interaction::Erasing && data.storage.get(pos) == Some(&GridNodeType::Wall) {
-                            data.storage.remove(pos);
-                        } 
-
+                        if self.drawing == Interaction::Drawing {
+                            if self.selected_tool == GridNodeType::Empty {
+                                data.remove_node(pos);
+                            } else {
+                                if self.selected_tool == GridNodeType::TargetNode(1) {
+                                    ctx.request_paint_rect(self.invalidation_area(data.end_node));
+                                } else if self.selected_tool == GridNodeType::StartNode(1) {
+                                    ctx.request_paint_rect(self.invalidation_area(data.start_node));
+                                }
+                                data.add_node(pos, self.selected_tool);
+                            }   
+                        }
+                        
                         ctx.request_paint_rect(self.invalidation_area(*pos));
                     });
                 }

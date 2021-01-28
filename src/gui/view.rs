@@ -3,7 +3,7 @@ use druid::{WidgetExt, Env, Widget, EventCtx };
 use druid::widget::{Button, Flex, Label, MainAxisAlignment, CrossAxisAlignment, Slider, Checkbox,};
 //use druid_widget_nursery::{DropdownSelect};
 
-use super::grid_axis_widget::{GridWidget, WALL_TOOL, END_NODE_TOOL, START_NODE_TOOL, TOGGLE_GRID_AXIS, TOGGLE_DRAWING};
+use super::grid_axis_widget::{GridWidget, WALL_TOOL, END_NODE_TOOL, ERASE_TOOL, START_NODE_TOOL, TOGGLE_GRID_AXIS, TOGGLE_DRAWING};
 use crate::gui::controllers::TimerController;
 use crate::data::*;
 use crate::pathfinding_types::*;
@@ -109,6 +109,7 @@ fn make_clear_button() -> impl Widget<AppData> {
 fn make_tool_button() -> impl Widget<AppData> {
     Button::new(|data: &GridNodeType, _: &Env| match data {
         GridNodeType::Wall => "Wall".into(),
+        GridNodeType::Empty => "Erase".into(),
         GridNodeType::StartNode(1) => "StartNode".into(),
         GridNodeType::TargetNode(1) => "EndNode".into(),
         _ => "".into(),
@@ -116,6 +117,10 @@ fn make_tool_button() -> impl Widget<AppData> {
     .on_click(|ctx, data: &mut GridNodeType, _: &Env| {
         match data{
             GridNodeType::Wall => {
+                *data = GridNodeType::Empty;
+                ctx.submit_command(ERASE_TOOL.to(ID_ONE))
+            },
+            GridNodeType::Empty => {
                 *data = GridNodeType::StartNode(1);
                 ctx.submit_command(START_NODE_TOOL.to(ID_ONE))
             },

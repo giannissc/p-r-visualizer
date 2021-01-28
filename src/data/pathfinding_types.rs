@@ -73,6 +73,7 @@ type Net = i32;
 pub enum GridNodeType {
     
     Wall,
+    Empty,
     //WeightedNode(Weight),
     StartNode(Net),
     TargetNode(Net),
@@ -118,12 +119,61 @@ impl Grid {
         unimplemented!()
     }
 
-    pub fn add_node(&mut self, pos:GridNodePosition, tool: GridNodeType){
-        unimplemented!()
+    pub fn add_node(&mut self, pos: &GridNodePosition, tool: GridNodeType){
+        match tool {
+            GridNodeType::Empty => (),
+            GridNodeType::Wall => {
+                if self.storage.contains_key(pos)  {
+                    let item = self.storage.get(pos);
+                    if item != Some(&GridNodeType::StartNode(1)) && item != Some(&GridNodeType::TargetNode(1)) {
+                        self.storage.insert(*pos, tool);
+                    }
+                } else {
+                    self.storage.insert(*pos, tool);
+                }
+            },
+            GridNodeType::StartNode(_) => {
+                if *pos != self.end_node {
+                    self.storage.remove(&self.start_node);
+                    self.start_node = *pos;
+                    self.storage.insert(*pos, tool);
+                }
+                
+            },
+            GridNodeType::TargetNode(_) => {
+                if *pos != self.start_node{
+                    self.storage.remove(&self.end_node);
+                    self.end_node = *pos;
+                    self.storage.insert(*pos, tool);
+                }
+                
+            },
+            GridNodeType::ExploredNodes(_) => {
+                let item = self.storage.get(pos); 
+                if item != Some(&GridNodeType::TargetNode(1)) && item != Some(&GridNodeType::StartNode(1)){
+                    self.storage.insert(*pos, tool);
+                }
+            },
+            GridNodeType::UnexploredNodes(_) => {
+                let item = self.storage.get(pos); 
+                if item != Some(&GridNodeType::TargetNode(1)) && item != Some(&GridNodeType::StartNode(1)){
+                    self.storage.insert(*pos, tool);
+                }
+            },
+            GridNodeType::ChosenPath(_) => {
+                let item = self.storage.get(pos); 
+                if item != Some(&GridNodeType::TargetNode(1)) && item != Some(&GridNodeType::StartNode(1)){
+                    self.storage.insert(*pos, tool);
+                }
+            },
+        }
     }
 
-    pub fn remove_node(&mut self, pos:GridNodePosition){
-        unimplemented!()
+    pub fn remove_node(&mut self, pos: &GridNodePosition){
+        let item = self.storage.get(pos);
+        if item == Some(&GridNodeType::Wall) {
+            self.storage.remove(pos);
+        }
     }
 
     pub fn add_path(&mut self, pos:GridNodePosition){
