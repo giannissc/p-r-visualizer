@@ -1,5 +1,4 @@
 // TODO Configure rustfmt and clippy
-// TODO Switch to self referential types?
 // TODO Implement custom grid patterns
 // Implement drop selection
 // Add selection for heuristic
@@ -43,7 +42,7 @@ fn main() {
     let data = AppData {
         is_paused: false,
         is_running: false,
-        updates_per_second: 1.0,
+        updates_per_second: 10.0,
         grid: Grid::new(GridNodePosition{row: 20, col: 10}, GridNodePosition{row:20, col:50}),
         selected_tool: GridNodeType::Wall,
         path_tool: PathAlgorithms::Astar,

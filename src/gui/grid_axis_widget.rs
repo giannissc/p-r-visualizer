@@ -28,7 +28,9 @@ pub const WALL_TOOL: Selector = Selector::new("wall-tool");
 pub const ERASE_TOOL: Selector = Selector::new("erase-tool");
 pub const START_NODE_TOOL: Selector = Selector::new("start-node-tool");
 pub const END_NODE_TOOL: Selector = Selector::new("end-node-tool");
-pub const TOGGLE_DRAWING: Selector =  Selector::new("toggle-drawing");
+pub const LOCK_DRAWING: Selector =  Selector::new("lock-drawing");
+pub const UNLOCK_DRAWING: Selector =  Selector::new("unlock-drawing");
+pub const RESET: Selector =  Selector::new("RESET");
 
 #[derive(Clone, PartialEq, Data)]
 enum Interaction {
@@ -85,7 +87,7 @@ impl GridWidget {
         Some(GridNodePosition { row, col })
     }
 
-    fn invalidation_area (&self, pos: GridNodePosition) -> Rect{
+    pub fn invalidation_area (&self, pos: GridNodePosition) -> Rect{
         let point = Point {
             x: self.cell_size.width * pos.col as f64,
             y: self.cell_size.height * pos.row as f64,
@@ -113,12 +115,12 @@ impl Widget<Grid> for GridWidget {
                 } else if cmd.is(TOGGLE_GRID_AXIS) {
                     self.show_grid_axis = !self.show_grid_axis;
                     ctx.request_paint();
-                } else if cmd.is(TOGGLE_DRAWING) {
-                    if self.drawing == Interaction::None {
-                        self.drawing = Interaction::LockedUI
-                    } else if self.drawing == Interaction::LockedUI {
-                        self.drawing = Interaction::None
-                    }
+                } else if cmd.is(LOCK_DRAWING) {
+                    self.drawing = Interaction::LockedUI
+                }else if cmd.is(UNLOCK_DRAWING) {
+                    self.drawing = Interaction::None
+                } else if cmd.is(RESET) {
+                    data.clear_paths();
                 }
             }
 
@@ -132,10 +134,17 @@ impl Widget<Grid> for GridWidget {
                                 data.remove_node(pos);
                             } else {
                                 if self.selected_tool == GridNodeType::TargetNode(1) {
+                                    ctx.submit_command(RESET);
                                     ctx.request_paint_rect(self.invalidation_area(data.end_node));
                                 } else if self.selected_tool == GridNodeType::StartNode(1) {
+                                    ctx.submit_command(RESET);
                                     ctx.request_paint_rect(self.invalidation_area(data.start_node));
                                 }
+
+                                if data.storage.get(pos) == Some(&GridNodeType::ChosenPath(1)) {
+                                    ctx.submit_command(RESET);
+                                }
+
                                 data.add_node(pos, self.selected_tool);
                             }
                              
@@ -160,10 +169,17 @@ impl Widget<Grid> for GridWidget {
                                 data.remove_node(pos);
                             } else {
                                 if self.selected_tool == GridNodeType::TargetNode(1) {
+                                    ctx.submit_command(RESET);
                                     ctx.request_paint_rect(self.invalidation_area(data.end_node));
                                 } else if self.selected_tool == GridNodeType::StartNode(1) {
+                                    ctx.submit_command(RESET);
                                     ctx.request_paint_rect(self.invalidation_area(data.start_node));
                                 }
+
+                                if data.storage.get(pos) == Some(&GridNodeType::ChosenPath(1)) {
+                                    ctx.submit_command(RESET);
+                                }
+                                
                                 data.add_node(pos, self.selected_tool);
                             }   
                         }
@@ -179,10 +195,12 @@ impl Widget<Grid> for GridWidget {
     fn lifecycle(&mut self, _ctx: &mut LifeCycleCtx, _event: &LifeCycle, _data: &Grid, _env: &Env, ) {
     }
 
-    fn update(&mut self, ctx: &mut UpdateCtx, _old_data: &Grid, data: &Grid, _env: &Env) {
-        if data.storage.len() == 2{
+    fn update(&mut self, ctx: &mut UpdateCtx, old_data: &Grid, data: &Grid, _env: &Env) {
+        //println!("Grid Widget - Old data: {:?}", old_data.storage.len());
+        //println!("Grid Widget - New data: {:?}\n", data.storage.len());
+        if (data.storage.len() as i64 - old_data.storage.len() as i64).abs() > 1 {
             ctx.request_paint();
-        }    
+        }
     }
 
     // Maybe the issue when drawing a non square grid

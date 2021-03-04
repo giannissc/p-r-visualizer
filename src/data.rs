@@ -8,11 +8,11 @@ use crate::{data::pathfinding_types::*, };
 //////////////////////////////////////////////////////////////////////////////////////
 // Constants
 //////////////////////////////////////////////////////////////////////////////////////
-pub const GRID_COLUMNS: usize = 160; 
-pub const GRID_ROWS: usize = 100; 
+pub const GRID_COLUMNS: usize = 80; 
+pub const GRID_ROWS: usize = 30; 
 pub const COLOR: Color = Color::BLACK;
 pub const BACKGROUND: Color = Color::grey8(23);
-pub const ID_ONE: WidgetId = WidgetId::reserved(1);
+pub const GRID_ID: WidgetId = WidgetId::reserved(1);
 
 
 //////////////////////////////////////////////////////////////////////////////////////

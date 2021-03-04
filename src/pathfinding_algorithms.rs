@@ -3,18 +3,18 @@ use crate::data::pathfinding_types::*;
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum AlgorithmState {
-    INITIALIZATION,
-    RUNNING,
-    PATH_CONSTRUCTION,
-    FINISHED,
-    FAILED,
+    Initialization,
+    Running,
+    PathConstruction,
+    Finished,
+    Failed,
 }
 
 pub struct PathAlgo {
     selected_algorithm: PathAlgorithms,
     is_bidirectional: bool,
     allow_diagonal: bool,
-    algorithm_state: AlgorithmState,
+    pub algorithm_state: AlgorithmState,
     open_list: HashSet<PathNodes>,
     closed_list: HashSet<PathNodes>,
     path_list: Vector<PathNodes>,
@@ -29,7 +29,7 @@ impl PathAlgo {
             selected_algorithm: PathAlgorithms::Astar,
             is_bidirectional: false,
             allow_diagonal: false,
-            algorithm_state: AlgorithmState::INITIALIZATION,
+            algorithm_state: AlgorithmState::Initialization,
             open_list: HashSet::new(),
             closed_list: HashSet::new(),
             path_list: Vector::new(), 
@@ -42,13 +42,15 @@ impl PathAlgo {
     }
 
 
-    pub fn next_step(&mut self, grid: &Grid) -> AlgorithmState{
-        if self.algorithm_state == AlgorithmState::INITIALIZATION {
+    pub fn next_step(&mut self, grid: &mut Grid) -> AlgorithmState{
+        if self.algorithm_state == AlgorithmState::Initialization {
+            println!("Setting up algorithm");
             self.open_list.insert(PathNodes::new(0, grid.end_node, grid.start_node, None)); // Step 1: Add the starting node to the open list
-            self.algorithm_state = AlgorithmState::RUNNING;           
-        } else if self.algorithm_state == AlgorithmState::RUNNING {
+            self.algorithm_state = AlgorithmState::Running;     
+            grid.clear_paths();      
+        } else if self.algorithm_state == AlgorithmState::Running {
             match self.get_min_cost_node(){
-                None => {self.algorithm_state = AlgorithmState::FAILED},
+                None => {self.algorithm_state = AlgorithmState::Failed},
                 Some(current_node) => {
                     self.open_list.remove(&current_node); // Step 2: Remove lower cost node from the open list
                     self.closed_list.insert(current_node); // Step 3: Add current node to the closed list
@@ -60,7 +62,7 @@ impl PathAlgo {
                                 let neighbour_node = PathNodes::new(&current_node.cost_from_start + 1, grid.end_node, *neighbour_pos, Some(current_node.position));
                                 if neighbour_node.position == grid.end_node {
                                     self.current_path_node = neighbour_node;
-                                    self.algorithm_state = AlgorithmState::PATH_CONSTRUCTION;
+                                    self.algorithm_state = AlgorithmState::PathConstruction;
                                 }
 
                                 if !self.closed_list.contains(&neighbour_node) { // Step 4.1: Node is not in closed list either.
@@ -81,7 +83,7 @@ impl PathAlgo {
                 }           
             }
 
-        } else if self.algorithm_state == AlgorithmState::PATH_CONSTRUCTION {
+        } else if self.algorithm_state == AlgorithmState::PathConstruction {
             self.construct_path();
         }
         self.algorithm_state
@@ -91,10 +93,11 @@ impl PathAlgo {
         unimplemented!()
     }
 
-    pub fn cancel(&mut self) {
+    pub fn reset(&mut self) {
         self.open_list.clear();
         self.closed_list.clear();
-        self.algorithm_state = AlgorithmState::INITIALIZATION;
+        self.path_list.clear();
+        self.algorithm_state = AlgorithmState::Initialization;
     }
 
     fn get_min_cost_node(&self) -> Option<PathNodes> {
@@ -113,7 +116,7 @@ impl PathAlgo {
     }
 
     fn construct_path(&mut self) {
-        println!("Constructing Path");
+        //println!("Constructing Path");
         let mut current_node = self.current_path_node;
         self.path_list.push_front(current_node);
         //println!("Current node: {:?}", current_node);         
@@ -121,7 +124,7 @@ impl PathAlgo {
         //println!("Parent node: {:?}", parent_node); 
         
         if parent_node.parent == None {
-            self.algorithm_state = AlgorithmState::FINISHED;
+            self.algorithm_state = AlgorithmState::Finished;
         } else {
             self.current_path_node = parent_node;
         }

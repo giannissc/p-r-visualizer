@@ -3,7 +3,7 @@ use druid::{WidgetExt, Env, Widget, EventCtx };
 use druid::widget::{Button, Flex, Label, MainAxisAlignment, CrossAxisAlignment, Slider, Checkbox,};
 //use druid_widget_nursery::{DropdownSelect};
 
-use super::grid_axis_widget::{GridWidget, WALL_TOOL, END_NODE_TOOL, ERASE_TOOL, START_NODE_TOOL, TOGGLE_GRID_AXIS, TOGGLE_DRAWING};
+use super::grid_axis_widget::{GridWidget, WALL_TOOL, END_NODE_TOOL, ERASE_TOOL, START_NODE_TOOL, TOGGLE_GRID_AXIS,UNLOCK_DRAWING, LOCK_DRAWING, RESET};
 use crate::gui::controllers::TimerController;
 use crate::data::*;
 use crate::pathfinding_types::*;
@@ -15,7 +15,7 @@ use crate::MazeAlgorithms;
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 pub fn make_ui() -> impl Widget<AppData> {
-    let grid = Flex::column().with_child(GridWidget::new(COLOR, GRID_ROWS, GRID_COLUMNS).with_id(ID_ONE).lens(AppData::grid));
+    let grid = Flex::column().with_child(GridWidget::new(COLOR, GRID_ROWS, GRID_COLUMNS).with_id(GRID_ID).lens(AppData::grid));
     //let grid = Flex::column().with_child(GridWidget::new(COLOR, GRID_ROWS, GRID_COLUMNS).lens(AppData::grid).debug_invalidation());
 
     Flex::column()
@@ -50,7 +50,7 @@ pub fn make_ui() -> impl Widget<AppData> {
                         )
                         .with_flex_child(
                             Slider::new()
-                                .with_range(0.2, 100.0)
+                                .with_range(0.2, 1000.0)
                                 .expand_width()
                                 .lens(AppData::updates_per_second),
                             1.,
@@ -68,7 +68,13 @@ fn make_run_button() -> impl Widget<AppData> {
     })
     .on_click(|ctx, data: &mut bool, _: &Env| {
         *data = !*data;
-        ctx.submit_command(TOGGLE_DRAWING.to(ID_ONE));
+        if *data {
+            ctx.submit_command(LOCK_DRAWING.to(GRID_ID));
+        } else {
+            ctx.submit_command(UNLOCK_DRAWING.to(GRID_ID));
+            ctx.submit_command(RESET);
+        }
+        
         ctx.request_layout();
     }).lens(AppData::is_running).padding((5., 5.))
 }
@@ -80,6 +86,13 @@ fn make_pause_button() -> impl Widget<AppData> {
     })
     .on_click(|ctx, data: &mut bool, _: &Env| {
         *data = !*data;
+        
+        if *data {
+            ctx.submit_command(UNLOCK_DRAWING.to(GRID_ID));
+        } else {
+            ctx.submit_command(LOCK_DRAWING.to(GRID_ID));
+        }
+
         ctx.request_layout();
     }).lens(AppData::is_paused).padding((5., 5.))
 }
@@ -102,6 +115,7 @@ fn make_clear_button() -> impl Widget<AppData> {
     Button::new("Clear")
     .on_click(|ctx, data: &mut Grid, _: &Env| {
         data.clear_all();
+        ctx.submit_command(RESET);
         ctx.request_paint();
     }).lens(AppData::grid).padding((5., 5.))
 }
@@ -118,19 +132,19 @@ fn make_tool_button() -> impl Widget<AppData> {
         match data{
             GridNodeType::Wall => {
                 *data = GridNodeType::Empty;
-                ctx.submit_command(ERASE_TOOL.to(ID_ONE))
+                ctx.submit_command(ERASE_TOOL.to(GRID_ID))
             },
             GridNodeType::Empty => {
                 *data = GridNodeType::StartNode(1);
-                ctx.submit_command(START_NODE_TOOL.to(ID_ONE))
+                ctx.submit_command(START_NODE_TOOL.to(GRID_ID))
             },
             GridNodeType::StartNode(1) => {
                 *data = GridNodeType::TargetNode(1);
-                ctx.submit_command(END_NODE_TOOL.to(ID_ONE))
+                ctx.submit_command(END_NODE_TOOL.to(GRID_ID))
             },
             GridNodeType::TargetNode(1) => {
                 *data = GridNodeType::Wall;
-                ctx.submit_command(WALL_TOOL.to(ID_ONE))
+                ctx.submit_command(WALL_TOOL.to(GRID_ID))
             },
             _ => ()
         };
@@ -187,7 +201,7 @@ fn make_maze_button() -> impl Widget<AppData> {
 fn make_grid_lines_button() -> impl Widget<AppData> {
     Checkbox::new("Grid Axis").on_click(|ctx: &mut EventCtx, data: &mut bool, _: &Env| {
         *data = !*data;
-        ctx.submit_command(TOGGLE_GRID_AXIS.to(ID_ONE))
+        ctx.submit_command(TOGGLE_GRID_AXIS.to(GRID_ID))
         
     }).lens(AppData::show_grid_lines).padding((5., 5.)) 
 }

@@ -1,4 +1,4 @@
-use druid::{Data, Lens};
+use druid::{Data, Lens, im::HashSet};
 use druid::im::HashMap;
 use std::hash::{Hash, Hasher};
 use crate::data::distance_heuristics::Heuristics;
@@ -127,7 +127,16 @@ impl Grid {
     }
 
     pub fn clear_paths(&mut self){
-        unimplemented!()
+        let mut temp_list: HashSet<GridNodePosition> = HashSet::new();
+        for (node_pos , node_type) in self.storage.iter(){
+            if node_type == &GridNodeType::ExploredNodes(1) || node_type == &GridNodeType::UnexploredNodes(1) || node_type == &GridNodeType::ChosenPath(1) {
+                temp_list.insert(*node_pos);
+            }
+        }
+
+        for node in temp_list.iter(){
+            self.remove_node(node);
+        }
     }
 
     pub fn add_node(&mut self, pos: &GridNodePosition, tool: GridNodeType){
@@ -135,10 +144,19 @@ impl Grid {
             GridNodeType::Empty => (),
             GridNodeType::Wall => {
                 if self.storage.contains_key(pos)  {
+                    
+                    if self.storage.get(pos) == Some(&GridNodeType::ChosenPath(1)) {
+                        self.clear_paths();
+                    }
+
                     let item = self.storage.get(pos);
+                    
                     if item != Some(&GridNodeType::StartNode(1)) && item != Some(&GridNodeType::TargetNode(1)) {
                         self.storage.insert(*pos, tool);
+                        // if a wall node interferes with a chosenPath node reset algorithm and clear board
                     }
+
+                    
                 } else {
                     self.storage.insert(*pos, tool);
                 }
@@ -148,6 +166,8 @@ impl Grid {
                     self.storage.remove(&self.start_node);
                     self.start_node = *pos;
                     self.storage.insert(*pos, tool);
+                    // When either goalpoast is moved you need to reset the algorithm and clear the board from all the algorithm nodes
+                    self.clear_paths();
                 }
                 
             },
@@ -156,18 +176,20 @@ impl Grid {
                     self.storage.remove(&self.end_node);
                     self.end_node = *pos;
                     self.storage.insert(*pos, tool);
+                    // When either goalpoast is moved you need to reset the algorithm and clear the board from all the algorithm nodes
+                    self.clear_paths();
                 }
                 
             },
             GridNodeType::ExploredNodes(_) => {
                 let item = self.storage.get(pos); 
-                if item != Some(&GridNodeType::TargetNode(1)) && item != Some(&GridNodeType::StartNode(1)){
+                if item != Some(&GridNodeType::TargetNode(1)) && item != Some(&GridNodeType::StartNode(1)) && item != Some(&GridNodeType::Wall){
                     self.storage.insert(*pos, tool);
                 }
             },
             GridNodeType::UnexploredNodes(_) => {
                 let item = self.storage.get(pos); 
-                if item != Some(&GridNodeType::TargetNode(1)) && item != Some(&GridNodeType::StartNode(1)){
+                if item != Some(&GridNodeType::TargetNode(1)) && item != Some(&GridNodeType::StartNode(1))  && item != Some(&GridNodeType::Wall){
                     self.storage.insert(*pos, tool);
                 }
             },
@@ -182,32 +204,32 @@ impl Grid {
 
     pub fn remove_node(&mut self, pos: &GridNodePosition){
         let item = self.storage.get(pos);
-        if item == Some(&GridNodeType::Wall) {
+        if item != Some(&GridNodeType::StartNode(1))  || item != Some(&GridNodeType::TargetNode(1)) {
             self.storage.remove(pos);
         }
     }
 
-    pub fn add_path(&mut self, pos:GridNodePosition){
+    pub fn add_path(&mut self, _pos:GridNodePosition){
         unimplemented!()
     }
 
-    pub fn remove_path(&mut self, pos:GridNodePosition){
+    pub fn remove_path(&mut self, _pos:GridNodePosition){
         unimplemented!()
     }
 
-    pub fn add_node_area(&mut self, pos: GridNodePosition, row_n: usize, column_n: usize, tool: GridNodeType){
+    pub fn add_node_area(&mut self, _pos: GridNodePosition, _row_n: usize, _column_n: usize, _tool: GridNodeType){
         unimplemented!()
     }
 
-    pub fn remove_node_area(&mut self, pos: GridNodePosition, row_n: usize, column_n: usize, tool: GridNodeType){
+    pub fn remove_node_area(&mut self, _pos: GridNodePosition, _row_n: usize, _column_n: usize, _tool: GridNodeType){
         unimplemented!()
     }
 
-    pub fn add_node_perimeter(&mut self, pos: GridNodePosition, row_n: usize, column_n: usize, tool: GridNodeType){
+    pub fn add_node_perimeter(&mut self, _pos: GridNodePosition, _row_n: usize, _column_n: usize, _tool: GridNodeType){
         unimplemented!()
     }
 
-    pub fn remove_node_perimeter(&mut self, pos: GridNodePosition, row_n: usize, column_n: usize, tool: GridNodeType){
+    pub fn remove_node_perimeter(&mut self, _pos: GridNodePosition, _row_n: usize, _column_n: usize, _tool: GridNodeType){
         unimplemented!()
     }
 
