@@ -97,19 +97,19 @@ impl Widget<GridWidgetData> for GridWidget {
                             if data.selected_tool == GridNodeType::Empty {
                                 data.grid.remove_node(pos);
                             } else {
-                                if data.selected_tool == GridNodeType::TargetNode(1) {
+                                if data.selected_tool == GridNodeType::TargetNode(data.selected_net) {
                                     ctx.submit_command(RESET);
                                     ctx.request_paint_rect(self.invalidation_area(data.grid.end_node));
-                                } else if data.selected_tool == GridNodeType::StartNode(1) {
+                                } else if data.selected_tool == GridNodeType::StartNode(data.selected_net) {
                                     ctx.submit_command(RESET);
                                     ctx.request_paint_rect(self.invalidation_area(data.grid.start_node));
                                 }
 
-                                if data.grid.get(pos) == Some(&GridNodeType::ChosenPath(1)) {
+                                if data.grid.get(pos) == Some(&GridNodeType::ChosenPath(data.selected_net)) {
                                     ctx.submit_command(RESET);
                                 }
 
-                                data.grid.add_node(pos, data.selected_tool);
+                                data.grid.add_node(pos, data.selected_tool, data.selected_net);
                             }
                              
                             ctx.request_paint_rect(self.invalidation_area(*pos));
@@ -132,19 +132,19 @@ impl Widget<GridWidgetData> for GridWidget {
                             if data.selected_tool == GridNodeType::Empty {
                                 data.grid.remove_node(pos);
                             } else {
-                                if data.selected_tool == GridNodeType::TargetNode(1) {
+                                if data.selected_tool == GridNodeType::TargetNode(data.selected_net) {
                                     ctx.submit_command(RESET);
                                     ctx.request_paint_rect(self.invalidation_area(data.grid.end_node));
-                                } else if data.selected_tool == GridNodeType::StartNode(1) {
+                                } else if data.selected_tool == GridNodeType::StartNode(data.selected_net) {
                                     ctx.submit_command(RESET);
                                     ctx.request_paint_rect(self.invalidation_area(data.grid.start_node));
                                 }
 
-                                if data.grid.get(pos) == Some(&GridNodeType::ChosenPath(1)) {
+                                if data.grid.get(pos) == Some(&GridNodeType::ChosenPath(data.selected_net)) {
                                     ctx.submit_command(RESET);
                                 }
                                 
-                                data.grid.add_node(pos, data.selected_tool);
+                                data.grid.add_node(pos, data.selected_tool, data.selected_net);
                             }   
                         }
                         
@@ -160,8 +160,6 @@ impl Widget<GridWidgetData> for GridWidget {
     }
 
     fn update(&mut self, ctx: &mut UpdateCtx, old_data: &GridWidgetData, data: &GridWidgetData, _env: &Env) {
-        //println!("Grid Widget - Old data: {:?}", old_data.storage.len());
-        //println!("Grid Widget - New data: {:?}\n", data.storage.len());
         if (data.grid.len() as i64 - old_data.grid.len() as i64).abs() > 1 {
             ctx.request_paint();
         }

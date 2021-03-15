@@ -125,7 +125,7 @@ fn make_tool_dropdown() -> impl Widget<AppData> {
     DropdownSelect::new(vector![
         ("Wall", GridNodeType::Wall),
         ("Erase", GridNodeType::Empty),
-        ("Start Node", GridNodeType::StartNode(1)),
+        ("Start Node", GridNodeType::StartNode(1)), // It doesn't matter which number you have here because when adding node both selected_tool and selected_net will be used
         ("End Node", GridNodeType::TargetNode(1)),
     ]).lens(GridWidgetData::selected_tool).lens(AppData::grid_data).padding((5., 5.))
 }

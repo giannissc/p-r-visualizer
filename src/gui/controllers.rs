@@ -37,7 +37,7 @@ impl <W: Widget<AppData>> Controller<AppData, W> for TimerController {
                     if !data.is_paused && data.is_running  && self.path_algo.algorithm_state != AlgorithmState::Finished { // Run the algorithm
 
                         if self.path_algo.algorithm_state == AlgorithmState::Initialization {
-                            data.grid_data.grid.add_node_perimeter(GridNodePosition{row:0, col:0}, GRID_ROWS, GRID_COLUMNS, GridNodeType::Wall)
+                            data.grid_data.grid.add_node_perimeter(GridNodePosition{row:0, col:0}, GRID_ROWS, GRID_COLUMNS, GridNodeType::Wall, 1)
 
                         }
                         
@@ -48,16 +48,16 @@ impl <W: Widget<AppData>> Controller<AppData, W> for TimerController {
                         }
 
                         for node in self.path_algo.get_open_nodes().iter(){
-                            data.grid_data.grid.add_node(&node.position, GridNodeType::UnexploredNodes(1));
+                            data.grid_data.grid.add_node(&node.position, GridNodeType::UnexploredNodes(data.grid_data.selected_net), data.grid_data.selected_net);
                             
                         }
 
                         for node in self.path_algo.get_closed_nodes().iter(){
-                            data.grid_data.grid.add_node(&node.position, GridNodeType::ExploredNodes(1));                            
+                            data.grid_data.grid.add_node(&node.position, GridNodeType::ExploredNodes(data.grid_data.selected_net), data.grid_data.selected_net);                            
                         }
 
                         for node in self.path_algo.get_path_nodes().iter(){
-                            data.grid_data.grid.add_node(&node.position, GridNodeType::ChosenPath(1));                            
+                            data.grid_data.grid.add_node(&node.position, GridNodeType::ChosenPath(data.grid_data.selected_net), data.grid_data.selected_net);                            
                         }
 
                         ctx.request_paint(); // Change to partial paint?
