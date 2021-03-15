@@ -8,21 +8,30 @@
 // Have algorithms run in their own thread
 
 
-mod data;
 mod pathfinding_algorithms;
 mod maze_algorithms;
 
+mod data {
+    pub mod app_data;
+    pub mod distance_heuristics;
+    pub mod pathfinding_types;
+}
+
 mod gui {
-    pub mod grid_axis_widget;
     pub mod view;
     pub mod controllers;
+
+    pub mod grid_widget {
+        pub mod grid_widget_data;
+        pub mod grid_widget_view;
+    }
 }
 
 
 use crate::data::pathfinding_types::*;
-use crate::data::*;
+use crate::data::app_data::*;
 use crate::gui::view::make_ui;
-use crate::gui::grid_axis_widget::GridWidgetData;
+use crate::gui::grid_widget::grid_widget_data::{GridWidgetData, GridNodePosition, Grid};
 
 // Druid imports
 

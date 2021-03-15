@@ -1,5 +1,6 @@
 use druid::im::{Vector, HashSet};
 use crate::data::pathfinding_types::*;
+use crate::gui::grid_widget::grid_widget_data::*;
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum AlgorithmState {

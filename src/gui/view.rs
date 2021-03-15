@@ -4,11 +4,10 @@ use druid::widget::{Button, Flex, Label, MainAxisAlignment, CrossAxisAlignment, 
 use druid_widget_nursery::{DropdownSelect};
 use druid::im::vector;
 
-use super::grid_axis_widget::{GridWidget, RESET, LOCK_DRAWING, UNLOCK_DRAWING};
+use super::grid_widget::grid_widget_data::*;
+use super::grid_widget::grid_widget_view::GridWidget;
 use crate::gui::controllers::TimerController;
-use crate::gui::grid_axis_widget::GridWidgetData;
-use crate::data::*;
-use crate::pathfinding_types::*;
+use crate::data::app_data::*;
 use crate::PathAlgorithms;
 use crate::MazeAlgorithms;
 
@@ -52,7 +51,7 @@ pub fn make_ui() -> impl Widget<AppData> {
                         )
                         .with_flex_child(
                             Slider::new()
-                                .with_range(0.2, 1000.0)
+                                .with_range(0.2, 500.0)
                                 .expand_width()
                                 .lens(AppData::updates_per_second),
                             1.,
@@ -189,14 +188,14 @@ fn make_path_dropdown() -> impl Widget<AppData> {
 fn make_maze_button() -> impl Widget<AppData> {
     Button::new(|data: &MazeAlgorithms, _: &Env| match data {
         MazeAlgorithms::Random => "Random".into(),
-        MazeAlgorithms::Recursive => "Recursive".into(),
-        MazeAlgorithms::Backtrace => "Backtrace".into(),
+        MazeAlgorithms::RecursiveSubdivision => "Recursive".into(),
+        MazeAlgorithms::RecursiveBacktrace => "Backtrace".into(),
     })
     .on_click(|ctx, data: &mut MazeAlgorithms, _: &Env| {
         match data{
-            MazeAlgorithms::Random => *data = MazeAlgorithms::Recursive,
-            MazeAlgorithms::Recursive => *data = MazeAlgorithms::Backtrace,
-            MazeAlgorithms::Backtrace => *data = MazeAlgorithms::Random,
+            MazeAlgorithms::Random => *data = MazeAlgorithms::RecursiveSubdivision,
+            MazeAlgorithms::RecursiveSubdivision => *data = MazeAlgorithms::RecursiveBacktrace,
+            MazeAlgorithms::RecursiveBacktrace => *data = MazeAlgorithms::Random,
         };
         ctx.request_layout();
     }).lens(AppData::maze_tool).padding((5., 5.)) 
@@ -205,8 +204,8 @@ fn make_maze_button() -> impl Widget<AppData> {
 fn make_maze_dropdown() -> impl Widget<AppData> {
     DropdownSelect::new(vector![
         ("Random", MazeAlgorithms::Random),
-        ("Recusrive", MazeAlgorithms::Recursive),
-        ("Backtrace", MazeAlgorithms::Backtrace),
+        ("Recusrive Subdivision", MazeAlgorithms::RecursiveSubdivision),
+        ("Recursive Backtrace", MazeAlgorithms::RecursiveBacktrace),
     ]).lens(AppData::maze_tool).padding((5., 5.))
 }
 

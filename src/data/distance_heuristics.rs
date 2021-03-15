@@ -1,4 +1,4 @@
-use crate::pathfinding_types::*;
+use crate::gui::grid_widget::grid_widget_data::*;
 pub enum Heuristics {
     Manhattan,
     Euclidean,

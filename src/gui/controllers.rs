@@ -1,11 +1,9 @@
 use druid::{widget::Controller, Env, EventCtx, Widget, TimerToken, Event,};
 use std::time::{Duration, Instant};
 
-use crate::{AppData};
+use crate::data::app_data::{AppData, GRID_COLUMNS, GRID_ROWS};
 use crate::pathfinding_algorithms::*;
-use crate::data::pathfinding_types::*;
-use crate::gui::grid_axis_widget::{RESET, Interaction};
-use crate::data::{GRID_COLUMNS, GRID_ROWS};
+use crate::gui::grid_widget::grid_widget_data::*;
 
 pub struct TimerController {
     pub timer_id: TimerToken,
