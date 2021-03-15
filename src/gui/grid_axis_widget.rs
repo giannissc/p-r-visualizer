@@ -22,22 +22,37 @@ use druid::{BoxConstraints, Data, Env, Event, EventCtx, LayoutCtx, Lens, LifeCyc
 use druid::{Color, Point, Rect, Size};
 use crate::pathfinding_types::*;
 
-
-pub const TOGGLE_GRID_AXIS: Selector = Selector::new("toggle-grid");
-pub const WALL_TOOL: Selector = Selector::new("wall-tool");
-pub const ERASE_TOOL: Selector = Selector::new("erase-tool");
-pub const START_NODE_TOOL: Selector = Selector::new("start-node-tool");
-pub const END_NODE_TOOL: Selector = Selector::new("end-node-tool");
 pub const LOCK_DRAWING: Selector =  Selector::new("lock-drawing");
 pub const UNLOCK_DRAWING: Selector =  Selector::new("unlock-drawing");
 pub const RESET: Selector =  Selector::new("RESET");
 
 #[derive(Clone, PartialEq, Data)]
-enum Interaction {
+pub enum Interaction {
     None,
     Drawing,
     //Panning,
     LockedUI,
+}
+
+#[derive(Clone, PartialEq, Data, Lens)]
+pub struct GridWidgetData {
+    pub grid: Grid,
+    pub interaction_state: Interaction,
+    pub selected_tool: GridNodeType,
+    pub show_grid_axis: bool,   
+}
+
+
+
+impl GridWidgetData {
+    pub fn new(grid: Grid) -> Self {
+        GridWidgetData {
+            grid: grid,
+            interaction_state: Interaction::None,
+            show_grid_axis: true,
+            selected_tool: GridNodeType::Wall,
+        }
+    } 
 }
 
 
@@ -51,10 +66,7 @@ pub struct GridWidget {
     rows: usize,
     columns: usize,
     cell_size: Size,
-    drawing: Interaction,
-    show_grid_axis: bool,
     color: Color,
-    selected_tool: GridNodeType
 }
 
 impl GridWidget {
@@ -66,10 +78,7 @@ impl GridWidget {
                 width: 0.0,
                 height: 0.0,
             },
-            drawing: Interaction::None,
-            show_grid_axis: true, // Need to handle this with Commands and Widget ID
             color: color, // TODO Need color array
-            selected_tool: GridNodeType::Wall,
         }
     }
 
@@ -96,31 +105,20 @@ impl GridWidget {
     }
 }
 
-impl Widget<Grid> for GridWidget {
-    fn event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut Grid, _env: &Env) {
+impl Widget<GridWidgetData> for GridWidget {
+    fn event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut GridWidgetData, _env: &Env) {
         match event {
             Event::WindowConnected => {
                 ctx.request_paint();
             }
 
             Event::Command(cmd) => {
-                if cmd.is(WALL_TOOL) {
-                    self.selected_tool = GridNodeType::Wall;
-                } else if cmd.is(ERASE_TOOL) {
-                    self.selected_tool = GridNodeType::Empty;
-                } else if cmd.is(END_NODE_TOOL) {
-                    self.selected_tool = GridNodeType::TargetNode(1);
-                } else if cmd.is(START_NODE_TOOL){
-                    self.selected_tool = GridNodeType::StartNode(1);
-                } else if cmd.is(TOGGLE_GRID_AXIS) {
-                    self.show_grid_axis = !self.show_grid_axis;
-                    ctx.request_paint();
-                } else if cmd.is(LOCK_DRAWING) {
-                    self.drawing = Interaction::LockedUI
+                if cmd.is(LOCK_DRAWING) {
+                    data.interaction_state = Interaction::LockedUI
                 }else if cmd.is(UNLOCK_DRAWING) {
-                    self.drawing = Interaction::None
+                    data.interaction_state = Interaction::None
                 } else if cmd.is(RESET) {
-                    data.clear_paths();
+                    data.grid.clear_paths();
                 }
             }
 
@@ -129,58 +127,58 @@ impl Widget<Grid> for GridWidget {
                     let grid_pos_opt = self.grid_pos(e.pos);
                     grid_pos_opt.iter().for_each(|pos| {
 
-                        if self.drawing == Interaction::None {
-                            if self.selected_tool == GridNodeType::Empty {
-                                data.remove_node(pos);
+                        if data.interaction_state == Interaction::None {
+                            if data.selected_tool == GridNodeType::Empty {
+                                data.grid.remove_node(pos);
                             } else {
-                                if self.selected_tool == GridNodeType::TargetNode(1) {
+                                if data.selected_tool == GridNodeType::TargetNode(1) {
                                     ctx.submit_command(RESET);
-                                    ctx.request_paint_rect(self.invalidation_area(data.end_node));
-                                } else if self.selected_tool == GridNodeType::StartNode(1) {
+                                    ctx.request_paint_rect(self.invalidation_area(data.grid.end_node));
+                                } else if data.selected_tool == GridNodeType::StartNode(1) {
                                     ctx.submit_command(RESET);
-                                    ctx.request_paint_rect(self.invalidation_area(data.start_node));
+                                    ctx.request_paint_rect(self.invalidation_area(data.grid.start_node));
                                 }
 
-                                if data.storage.get(pos) == Some(&GridNodeType::ChosenPath(1)) {
+                                if data.grid.storage.get(pos) == Some(&GridNodeType::ChosenPath(1)) {
                                     ctx.submit_command(RESET);
                                 }
 
-                                data.add_node(pos, self.selected_tool);
+                                data.grid.add_node(pos, data.selected_tool);
                             }
                              
                             ctx.request_paint_rect(self.invalidation_area(*pos));
-                            self.drawing = Interaction::Drawing;
+                            data.interaction_state = Interaction::Drawing;
                         }
                     });
                 }
             }
             Event::MouseUp(e) => {
-                if e.button == MouseButton::Left && self.drawing != Interaction::LockedUI {
-                    self.drawing = Interaction::None;
+                if e.button == MouseButton::Left && data.interaction_state != Interaction::LockedUI {
+                    data.interaction_state = Interaction::None;
                 }
             }
             Event::MouseMove(e) => {
-                if self.drawing != Interaction::LockedUI || self.drawing != Interaction::None {
+                if data.interaction_state != Interaction::LockedUI || data.interaction_state != Interaction::None {
                     let grid_pos_opt = self.grid_pos(e.pos);
                     grid_pos_opt.iter().for_each(|pos| {
                         //println!("Event Move: {:?}", *pos);
-                        if self.drawing == Interaction::Drawing {
-                            if self.selected_tool == GridNodeType::Empty {
-                                data.remove_node(pos);
+                        if data.interaction_state == Interaction::Drawing {
+                            if data.selected_tool == GridNodeType::Empty {
+                                data.grid.remove_node(pos);
                             } else {
-                                if self.selected_tool == GridNodeType::TargetNode(1) {
+                                if data.selected_tool == GridNodeType::TargetNode(1) {
                                     ctx.submit_command(RESET);
-                                    ctx.request_paint_rect(self.invalidation_area(data.end_node));
-                                } else if self.selected_tool == GridNodeType::StartNode(1) {
+                                    ctx.request_paint_rect(self.invalidation_area(data.grid.end_node));
+                                } else if data.selected_tool == GridNodeType::StartNode(1) {
                                     ctx.submit_command(RESET);
-                                    ctx.request_paint_rect(self.invalidation_area(data.start_node));
+                                    ctx.request_paint_rect(self.invalidation_area(data.grid.start_node));
                                 }
 
-                                if data.storage.get(pos) == Some(&GridNodeType::ChosenPath(1)) {
+                                if data.grid.storage.get(pos) == Some(&GridNodeType::ChosenPath(1)) {
                                     ctx.submit_command(RESET);
                                 }
                                 
-                                data.add_node(pos, self.selected_tool);
+                                data.grid.add_node(pos, data.selected_tool);
                             }   
                         }
                         
@@ -192,19 +190,23 @@ impl Widget<Grid> for GridWidget {
         }
     }
 
-    fn lifecycle(&mut self, _ctx: &mut LifeCycleCtx, _event: &LifeCycle, _data: &Grid, _env: &Env, ) {
+    fn lifecycle(&mut self, _ctx: &mut LifeCycleCtx, _event: &LifeCycle, _data: &GridWidgetData, _env: &Env, ) {
     }
 
-    fn update(&mut self, ctx: &mut UpdateCtx, old_data: &Grid, data: &Grid, _env: &Env) {
+    fn update(&mut self, ctx: &mut UpdateCtx, old_data: &GridWidgetData, data: &GridWidgetData, _env: &Env) {
         //println!("Grid Widget - Old data: {:?}", old_data.storage.len());
         //println!("Grid Widget - New data: {:?}\n", data.storage.len());
-        if (data.storage.len() as i64 - old_data.storage.len() as i64).abs() > 1 {
+        if (data.grid.storage.len() as i64 - old_data.grid.storage.len() as i64).abs() > 1 {
+            ctx.request_paint();
+        }
+
+        if data.show_grid_axis != old_data.show_grid_axis {
             ctx.request_paint();
         }
     }
 
     // Maybe the issue when drawing a non square grid
-    fn layout(&mut self, _layout_ctx: &mut LayoutCtx, bc: &BoxConstraints, _data: &Grid, _env: &Env,) -> Size {
+    fn layout(&mut self, _layout_ctx: &mut LayoutCtx, bc: &BoxConstraints, _data: &GridWidgetData, _env: &Env,) -> Size {
         let width = bc.max().width;
 
         Size {
@@ -213,7 +215,7 @@ impl Widget<Grid> for GridWidget {
         }
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, data: &Grid, _env: &Env) {
+    fn paint(&mut self, ctx: &mut PaintCtx, data: &GridWidgetData, _env: &Env) {
         //Update cell size
         let grid_size: Size = ctx.size();
         
@@ -226,7 +228,7 @@ impl Widget<Grid> for GridWidget {
         //println!("Cell size: {:?}", cell_size);
         
         // Draw grid cells
-        for (cell_pos, cell_type) in data.storage.iter(){
+        for (cell_pos, cell_type) in data.grid.storage.iter(){
             let point = Point {
                 x: cell_size.width * cell_pos.col as f64,
                 y: cell_size.height * cell_pos.row as f64,
@@ -249,7 +251,7 @@ impl Widget<Grid> for GridWidget {
 
         // Draw grid axis
 
-        if self.show_grid_axis {
+        if data.show_grid_axis {
             for row in 0..=self.rows {
                 let from_point = Point {
                     x: 0.0,

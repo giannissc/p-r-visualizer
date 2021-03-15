@@ -4,11 +4,8 @@ use std::time::{Duration, Instant};
 use crate::{AppData};
 use crate::pathfinding_algorithms::*;
 use crate::data::pathfinding_types::*;
-use crate::gui::grid_axis_widget::{UNLOCK_DRAWING, RESET};
-use crate::data::GRID_ID;
-
-
-
+use crate::gui::grid_axis_widget::{RESET, Interaction};
+use crate::data::{GRID_COLUMNS, GRID_ROWS};
 
 pub struct TimerController {
     pub timer_id: TimerToken,
@@ -40,24 +37,29 @@ impl <W: Widget<AppData>> Controller<AppData, W> for TimerController {
                 if *id == self.timer_id {
 
                     if !data.is_paused && data.is_running  && self.path_algo.algorithm_state != AlgorithmState::Finished { // Run the algorithm
+
+                        if self.path_algo.algorithm_state == AlgorithmState::Initialization {
+                            data.grid_data.grid.add_node_perimeter(GridNodePosition{row:0, col:0}, GRID_ROWS, GRID_COLUMNS, GridNodeType::Wall)
+
+                        }
                         
                         //println!("Algorithm running");
-                        if self.path_algo.next_step(&mut data.grid) == AlgorithmState::Finished {
+                        if self.path_algo.next_step(&mut data.grid_data.grid) == AlgorithmState::Finished {
                             //data.is_running = false;
-                            ctx.submit_command(UNLOCK_DRAWING.to(GRID_ID));
+                            data.grid_data.interaction_state = Interaction::None;
                         }
 
                         for node in self.path_algo.get_open_nodes().iter(){
-                            data.grid.add_node(&node.position, GridNodeType::UnexploredNodes(1));
+                            data.grid_data.grid.add_node(&node.position, GridNodeType::UnexploredNodes(1));
                             
                         }
 
                         for node in self.path_algo.get_closed_nodes().iter(){
-                            data.grid.add_node(&node.position, GridNodeType::ExploredNodes(1));                            
+                            data.grid_data.grid.add_node(&node.position, GridNodeType::ExploredNodes(1));                            
                         }
 
                         for node in self.path_algo.get_path_nodes().iter(){
-                            data.grid.add_node(&node.position, GridNodeType::ChosenPath(1));                            
+                            data.grid_data.grid.add_node(&node.position, GridNodeType::ChosenPath(1));                            
                         }
 
                         ctx.request_paint(); // Change to partial paint?

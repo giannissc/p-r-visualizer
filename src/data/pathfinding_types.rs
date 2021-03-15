@@ -225,8 +225,22 @@ impl Grid {
         unimplemented!()
     }
 
-    pub fn add_node_perimeter(&mut self, _pos: GridNodePosition, _row_n: usize, _column_n: usize, _tool: GridNodeType){
-        unimplemented!()
+    pub fn add_node_perimeter(&mut self, pos: GridNodePosition, row_n: usize, column_n: usize, tool: GridNodeType){
+        for row in pos.row..pos.row+row_n {
+            println!("Row: {:?}", row);
+            if row == pos.row || row == pos.row + row_n -1 {
+                // Top and Bottom Boundaries
+                println!("Printing top/bottom boundary");
+                for  column in pos.col..pos.col+column_n {
+                    self.add_node(&GridNodePosition{row:row, col:column}, tool);
+                }
+            } else {  
+                // Left Boundary
+                self.add_node(&GridNodePosition{row:row, col:pos.col}, tool);
+                // Right Boundary
+                self.add_node(&GridNodePosition{row:row, col:pos.col+column_n-1}, tool);
+            }
+        }
     }
 
     pub fn remove_node_perimeter(&mut self, _pos: GridNodePosition, _row_n: usize, _column_n: usize, _tool: GridNodeType){

@@ -4,6 +4,7 @@ pub mod pathfinding_types;
 use druid::{Lens, Data, Color, WidgetId};
 
 use crate::{data::pathfinding_types::*, };
+use crate::gui::grid_axis_widget::GridWidgetData;
 
 //////////////////////////////////////////////////////////////////////////////////////
 // Constants
@@ -24,11 +25,9 @@ pub struct AppData {
     pub is_paused: bool,
     pub is_running: bool,
     pub updates_per_second: f64,
-    pub grid: Grid,
-    pub selected_tool: GridNodeType,
+    pub grid_data: GridWidgetData,    
     pub path_tool: PathAlgorithms,
     pub maze_tool: MazeAlgorithms,
-    pub show_grid_lines: bool,
 }
 
 impl AppData {
