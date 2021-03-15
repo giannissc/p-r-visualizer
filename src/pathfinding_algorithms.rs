@@ -11,7 +11,7 @@ pub enum AlgorithmState {
     Failed,
 }
 
-pub struct PathAlgo {
+pub struct PathfindingConfig {
     selected_algorithm: PathAlgorithms,
     is_bidirectional: bool,
     allow_diagonal: bool,
@@ -24,9 +24,10 @@ pub struct PathAlgo {
 }
 
 
-impl PathAlgo {
+impl PathfindingConfig {
     pub fn new() -> Self {
-        PathAlgo {
+        PathfindingConfig
+     {
             selected_algorithm: PathAlgorithms::Astar,
             is_bidirectional: false,
             allow_diagonal: false,
@@ -38,9 +39,9 @@ impl PathAlgo {
         }
     }
 
-    pub fn run(&self) {
-        unimplemented!()
-    }
+    // pub fn run(&self) {
+    //     unimplemented!()
+    // }
 
 
     pub fn next_step(&mut self, grid: &mut Grid) -> AlgorithmState{
@@ -90,9 +91,9 @@ impl PathAlgo {
         self.algorithm_state
     }
 
-    pub fn previous_step(&mut self) {
-        unimplemented!()
-    }
+    // pub fn previous_step(&mut self) {
+    //     unimplemented!()
+    // }
 
     pub fn reset(&mut self) {
         self.open_list.clear();
@@ -118,7 +119,7 @@ impl PathAlgo {
 
     fn construct_path(&mut self) {
         //println!("Constructing Path");
-        let mut current_node = self.current_path_node;
+        let current_node = self.current_path_node;
         self.path_list.push_front(current_node);
         //println!("Current node: {:?}", current_node);         
         let parent_node = self.closed_list.remove(&PathNodes::reduced(current_node.parent.unwrap())).unwrap();

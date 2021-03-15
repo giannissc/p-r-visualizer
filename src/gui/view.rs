@@ -121,34 +121,6 @@ fn make_clear_button() -> impl Widget<AppData> {
     }).lens(AppData::grid_data).padding((5., 5.))
 }
 
-fn make_tool_button() -> impl Widget<AppData> {
-    Button::new(|data: &GridWidgetData, _: &Env| match data.selected_tool {
-        GridNodeType::Wall => "Wall".into(),
-        GridNodeType::Empty => "Erase".into(),
-        GridNodeType::StartNode(1) => "StartNode".into(),
-        GridNodeType::TargetNode(1) => "EndNode".into(),
-        _ => "".into(),
-    })
-    .on_click(|ctx, data: &mut GridWidgetData, _: &Env| {
-        match data.selected_tool{
-            GridNodeType::Wall => {
-                data.selected_tool = GridNodeType::Empty;
-            },
-            GridNodeType::Empty => {
-                data.selected_tool = GridNodeType::StartNode(1);
-            },
-            GridNodeType::StartNode(1) => {
-                data.selected_tool = GridNodeType::TargetNode(1);
-            },
-            GridNodeType::TargetNode(1) => {
-                data.selected_tool = GridNodeType::Wall;
-            },
-            _ => ()
-        };
-        ctx.request_layout();
-    }).lens(AppData::grid_data).padding((5., 5.))
-}
-
 fn make_tool_dropdown() -> impl Widget<AppData> {
     DropdownSelect::new(vector![
         ("Wall", GridNodeType::Wall),
@@ -156,24 +128,6 @@ fn make_tool_dropdown() -> impl Widget<AppData> {
         ("Start Node", GridNodeType::StartNode(1)),
         ("End Node", GridNodeType::TargetNode(1)),
     ]).lens(GridWidgetData::selected_tool).lens(AppData::grid_data).padding((5., 5.))
-}
-
-fn make_path_button() -> impl Widget<AppData> {
-    Button::new(|data: &PathAlgorithms, _: &Env| match data {
-        PathAlgorithms::Astar => "A star".into(),
-        PathAlgorithms::Dijkstra => "Dijkstra".into(),
-        PathAlgorithms::Swarm => "Swarm".into(),
-        _ => "".into(),
-    })
-    .on_click(|ctx, data: &mut PathAlgorithms, _: &Env| {
-        match data{
-            PathAlgorithms::Astar => *data = PathAlgorithms::Dijkstra,
-            PathAlgorithms::Dijkstra => *data = PathAlgorithms::Swarm,
-            PathAlgorithms::Swarm => *data = PathAlgorithms::Astar,
-            _ => ()
-        };
-        ctx.request_layout();
-    }).lens(AppData::path_tool).padding((5., 5.))
 }
 
 fn make_path_dropdown() -> impl Widget<AppData> {
@@ -185,22 +139,6 @@ fn make_path_dropdown() -> impl Widget<AppData> {
     ]).lens(AppData::path_tool).padding((5., 5.))
 }
 
-fn make_maze_button() -> impl Widget<AppData> {
-    Button::new(|data: &MazeAlgorithms, _: &Env| match data {
-        MazeAlgorithms::Random => "Random".into(),
-        MazeAlgorithms::RecursiveSubdivision => "Recursive".into(),
-        MazeAlgorithms::RecursiveBacktrace => "Backtrace".into(),
-    })
-    .on_click(|ctx, data: &mut MazeAlgorithms, _: &Env| {
-        match data{
-            MazeAlgorithms::Random => *data = MazeAlgorithms::RecursiveSubdivision,
-            MazeAlgorithms::RecursiveSubdivision => *data = MazeAlgorithms::RecursiveBacktrace,
-            MazeAlgorithms::RecursiveBacktrace => *data = MazeAlgorithms::Random,
-        };
-        ctx.request_layout();
-    }).lens(AppData::maze_tool).padding((5., 5.)) 
-}
-
 fn make_maze_dropdown() -> impl Widget<AppData> {
     DropdownSelect::new(vector![
         ("Random", MazeAlgorithms::Random),
@@ -210,7 +148,7 @@ fn make_maze_dropdown() -> impl Widget<AppData> {
 }
 
 fn make_grid_lines_button() -> impl Widget<AppData> {
-    Checkbox::new("Grid Axis").on_click(|ctx: &mut EventCtx, data: &mut bool, _: &Env| {
+    Checkbox::new("Grid Axis").on_click(|_ctx: &mut EventCtx, data: &mut bool, _: &Env| {
         *data = !*data;        
     }).lens(GridWidgetData::show_grid_axis).lens(AppData::grid_data).padding((5., 5.)) 
 }

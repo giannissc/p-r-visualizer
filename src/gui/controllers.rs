@@ -8,7 +8,7 @@ use crate::gui::grid_widget::grid_widget_data::*;
 pub struct TimerController {
     pub timer_id: TimerToken,
     pub last_update: Instant,
-    path_algo: PathAlgo,
+    path_algo: PathfindingConfig,
 }
 
 impl TimerController {
@@ -16,7 +16,7 @@ impl TimerController {
         TimerController {
             timer_id: TimerToken::INVALID,
             last_update: Instant::now(),
-            path_algo: PathAlgo::new(),
+            path_algo: PathfindingConfig::new(),
         }
     }
 }
