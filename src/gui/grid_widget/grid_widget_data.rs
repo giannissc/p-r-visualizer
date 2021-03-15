@@ -1,5 +1,6 @@
 use druid::{Data, Lens, Selector};
 use druid::im::{HashMap, HashSet};
+use druid::im::hashmap::Iter;
 
 
 pub const LOCK_DRAWING: Selector =  Selector::new("lock-drawing");
@@ -51,7 +52,7 @@ pub enum Interaction {
 //////////////////////////////////////////////////////////////////////////////////////
 #[derive(Clone, PartialEq, Data, Lens)]
 pub struct Grid {
-    pub storage: HashMap<GridNodePosition, GridNodeType>,
+    storage: HashMap<GridNodePosition, GridNodeType>,
     pub start_node: GridNodePosition,
     pub end_node: GridNodePosition,
 }
@@ -68,13 +69,25 @@ impl Grid {
         }
     }
 
-    pub fn clear_all(&mut self){
+    pub fn clear_all(&mut self) {
         self.storage.clear();
         self.storage.insert(self.start_node, GridNodeType::StartNode(1));
         self.storage.insert(self.end_node, GridNodeType::TargetNode(1));
     }
 
-    pub fn clear_paths(&mut self){
+    pub fn len(&self) -> usize {
+        self.storage.len()
+    }
+
+    pub fn get(&self, key: &GridNodePosition) -> Option<&GridNodeType>{
+        self.storage.get(key)
+    }
+
+    pub fn iter(&self) -> Iter<'_, GridNodePosition, GridNodeType>{
+        self.storage.iter()
+    }
+
+    pub fn clear_paths(&mut self) {
         let mut temp_list: HashSet<GridNodePosition> = HashSet::new();
         for (node_pos , node_type) in self.storage.iter(){
             if node_type == &GridNodeType::ExploredNodes(1) || node_type == &GridNodeType::UnexploredNodes(1) || node_type == &GridNodeType::ChosenPath(1) {
@@ -87,7 +100,7 @@ impl Grid {
         }
     }
 
-    pub fn add_node(&mut self, pos: &GridNodePosition, tool: GridNodeType){
+    pub fn add_node(&mut self, pos: &GridNodePosition, tool: GridNodeType) {
         match tool {
             GridNodeType::Empty => (),
             GridNodeType::Wall => {
@@ -150,30 +163,30 @@ impl Grid {
         }
     }
 
-    pub fn remove_node(&mut self, pos: &GridNodePosition){
+    pub fn remove_node(&mut self, pos: &GridNodePosition) {
         let item = self.storage.get(pos);
         if item != Some(&GridNodeType::StartNode(1))  || item != Some(&GridNodeType::TargetNode(1)) {
             self.storage.remove(pos);
         }
     }
 
-    pub fn add_path(&mut self, _pos:GridNodePosition){
+    pub fn add_path(&mut self, _pos:GridNodePosition) {
         unimplemented!()
     }
 
-    pub fn remove_path(&mut self, _pos:GridNodePosition){
+    pub fn remove_path(&mut self, _pos:GridNodePosition) {
         unimplemented!()
     }
 
-    pub fn add_node_area(&mut self, _pos: GridNodePosition, _row_n: usize, _column_n: usize, _tool: GridNodeType){
+    pub fn add_node_area(&mut self, _pos: GridNodePosition, _row_n: usize, _column_n: usize, _tool: GridNodeType) {
         unimplemented!()
     }
 
-    pub fn remove_node_area(&mut self, _pos: GridNodePosition, _row_n: usize, _column_n: usize, _tool: GridNodeType){
+    pub fn remove_node_area(&mut self, _pos: GridNodePosition, _row_n: usize, _column_n: usize, _tool: GridNodeType) {
         unimplemented!()
     }
 
-    pub fn add_node_perimeter(&mut self, pos: GridNodePosition, row_n: usize, column_n: usize, tool: GridNodeType){
+    pub fn add_node_perimeter(&mut self, pos: GridNodePosition, row_n: usize, column_n: usize, tool: GridNodeType) {
         for row in pos.row..pos.row+row_n {
             println!("Row: {:?}", row);
             if row == pos.row || row == pos.row + row_n -1 {

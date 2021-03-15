@@ -105,7 +105,7 @@ impl Widget<GridWidgetData> for GridWidget {
                                     ctx.request_paint_rect(self.invalidation_area(data.grid.start_node));
                                 }
 
-                                if data.grid.storage.get(pos) == Some(&GridNodeType::ChosenPath(1)) {
+                                if data.grid.get(pos) == Some(&GridNodeType::ChosenPath(1)) {
                                     ctx.submit_command(RESET);
                                 }
 
@@ -140,7 +140,7 @@ impl Widget<GridWidgetData> for GridWidget {
                                     ctx.request_paint_rect(self.invalidation_area(data.grid.start_node));
                                 }
 
-                                if data.grid.storage.get(pos) == Some(&GridNodeType::ChosenPath(1)) {
+                                if data.grid.get(pos) == Some(&GridNodeType::ChosenPath(1)) {
                                     ctx.submit_command(RESET);
                                 }
                                 
@@ -162,7 +162,7 @@ impl Widget<GridWidgetData> for GridWidget {
     fn update(&mut self, ctx: &mut UpdateCtx, old_data: &GridWidgetData, data: &GridWidgetData, _env: &Env) {
         //println!("Grid Widget - Old data: {:?}", old_data.storage.len());
         //println!("Grid Widget - New data: {:?}\n", data.storage.len());
-        if (data.grid.storage.len() as i64 - old_data.grid.storage.len() as i64).abs() > 1 {
+        if (data.grid.len() as i64 - old_data.grid.len() as i64).abs() > 1 {
             ctx.request_paint();
         }
 
@@ -194,7 +194,7 @@ impl Widget<GridWidgetData> for GridWidget {
         //println!("Cell size: {:?}", cell_size);
         
         // Draw grid cells
-        for (cell_pos, cell_type) in data.grid.storage.iter(){
+        for (cell_pos, cell_type) in data.grid.iter(){
             let point = Point {
                 x: cell_size.width * cell_pos.col as f64,
                 y: cell_size.height * cell_pos.row as f64,
