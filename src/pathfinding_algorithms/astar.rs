@@ -1,58 +1,44 @@
+use super::pathfinding_types::*;
+use druid::Data;
 use druid::im::{Vector, HashSet};
-use crate::data::pathfinding_types::*;
-use crate::gui::grid_widget::grid_widget_data::*;
+use crate::gui::grid_widget::square_grid_widget_data::*;
 
-#[derive(PartialEq, Copy, Clone)]
-pub enum AlgorithmState {
-    Initialization,
-    Running,
-    PathConstruction,
-    Finished,
-    Failed,
+#[derive(Data, Clone, Eq, PartialEq, Debug)]
+pub struct Astar{
+    pub algorithm_state: PathAlgorithmState,
+    pub open_list: HashSet<PathNodes>,
+    pub closed_list: HashSet<PathNodes>,
+    pub path_list: Vector<PathNodes>,
+    pub current_path_node: PathNodes, 
 }
 
-pub struct PathfindingConfig {
-    selected_algorithm: PathAlgorithms,
-    is_bidirectional: bool,
-    allow_diagonal: bool,
-    pub algorithm_state: AlgorithmState,
-    open_list: HashSet<PathNodes>,
-    closed_list: HashSet<PathNodes>,
-    path_list: Vector<PathNodes>,
-    current_path_node: PathNodes, 
-
-}
-
-
-impl PathfindingConfig {
+impl Astar {
     pub fn new() -> Self {
-        PathfindingConfig
-     {
-            selected_algorithm: PathAlgorithms::Astar,
-            is_bidirectional: false,
-            allow_diagonal: false,
-            algorithm_state: AlgorithmState::Initialization,
+        Astar {
+            algorithm_state: PathAlgorithmState::Initialization,
             open_list: HashSet::new(),
             closed_list: HashSet::new(),
             path_list: Vector::new(), 
-            current_path_node: PathNodes::empty(), 
+            current_path_node: PathNodes::empty(),
         }
     }
+}
 
-    // pub fn run(&self) {
-    //     unimplemented!()
-    // }
+impl PathfinderAlgorithm for Astar {
+    fn run(&mut self, grid: &mut Grid, config: &mut PathfinderConfig) {
+        todo!()
+    }
 
 
-    pub fn next_step(&mut self, grid: &mut Grid) -> AlgorithmState{
-        if self.algorithm_state == AlgorithmState::Initialization {
-            println!("Setting up algorithm");
+    fn next_step(&mut self, grid: &mut Grid, config: &mut PathfinderConfig) -> PathAlgorithmState{
+        if self.algorithm_state == PathAlgorithmState::Initialization {
+            //println!("Setting up algorithm");
             self.open_list.insert(PathNodes::new(0, grid.end_node, grid.start_node, None)); // Step 1: Add the starting node to the open list
-            self.algorithm_state = AlgorithmState::Running;     
+            self.algorithm_state = PathAlgorithmState::Running;     
             grid.clear_paths();      
-        } else if self.algorithm_state == AlgorithmState::Running {
-            match self.get_min_cost_node(){
-                None => {self.algorithm_state = AlgorithmState::Failed},
+        } else if self.algorithm_state == PathAlgorithmState::Running {
+            match self.get_next_node(config){
+                None => {self.algorithm_state = PathAlgorithmState::Failed},
                 Some(current_node) => {
                     self.open_list.remove(&current_node); // Step 2: Remove lower cost node from the open list
                     self.closed_list.insert(current_node); // Step 3: Add current node to the closed list
@@ -64,7 +50,7 @@ impl PathfindingConfig {
                                 let neighbour_node = PathNodes::new(&current_node.cost_from_start + 1, grid.end_node, *neighbour_pos, Some(current_node.position));
                                 if neighbour_node.position == grid.end_node {
                                     self.current_path_node = neighbour_node;
-                                    self.algorithm_state = AlgorithmState::PathConstruction;
+                                    self.algorithm_state = PathAlgorithmState::PathConstruction;
                                 }
 
                                 if !self.closed_list.contains(&neighbour_node) { // Step 4.1: Node is not in closed list either.
@@ -85,24 +71,40 @@ impl PathfindingConfig {
                 }           
             }
 
-        } else if self.algorithm_state == AlgorithmState::PathConstruction {
-            self.construct_path();
+        } else if self.algorithm_state == PathAlgorithmState::PathConstruction {
+            self.construct_path(config);
         }
         self.algorithm_state
     }
 
-    // pub fn previous_step(&mut self) {
-    //     unimplemented!()
-    // }
+    fn previous_step(&mut self) {
+        todo!()
+    }
 
-    pub fn reset(&mut self) {
+    fn reset(&mut self, config: &mut PathfinderConfig) {
         self.open_list.clear();
         self.closed_list.clear();
         self.path_list.clear();
-        self.algorithm_state = AlgorithmState::Initialization;
+        self.algorithm_state = PathAlgorithmState::Initialization;
     }
 
-    fn get_min_cost_node(&self) -> Option<PathNodes> {
+    fn construct_path(&mut self, config: &mut PathfinderConfig) {
+        //println!("Constructing Path");
+        let current_node = self.current_path_node;
+        self.path_list.push_front(current_node);
+        //println!("Current node: {:?}", current_node);         
+        let parent_node = self.closed_list.remove(&PathNodes::reduced(current_node.parent.unwrap())).unwrap();
+        //println!("Parent node: {:?}", parent_node); 
+        
+        if parent_node.parent == None {
+            self.algorithm_state = PathAlgorithmState::Finished;
+        } else {
+            self.current_path_node = parent_node;
+        }
+    }
+
+    fn get_next_node(&self, config: &PathfinderConfig) -> Option<PathNodes> {
+        // Gen min cost node for A*
         let mut min_cost = std::i64::MAX;
         let mut min_node: Option<PathNodes> = None;
 
@@ -117,34 +119,19 @@ impl PathfindingConfig {
         min_node
     }
 
-    fn construct_path(&mut self) {
-        //println!("Constructing Path");
-        let current_node = self.current_path_node;
-        self.path_list.push_front(current_node);
-        //println!("Current node: {:?}", current_node);         
-        let parent_node = self.closed_list.remove(&PathNodes::reduced(current_node.parent.unwrap())).unwrap();
-        //println!("Parent node: {:?}", parent_node); 
-        
-        if parent_node.parent == None {
-            self.algorithm_state = AlgorithmState::Finished;
-        } else {
-            self.current_path_node = parent_node;
-        }
+    fn get_open_nodes(&self) -> &HashSet<PathNodes> {
+        &self.open_list
     }
 
-
-    pub fn get_open_nodes(&self) -> &HashSet<PathNodes> {
-        return &self.open_list;
-
+    fn get_closed_nodes(&self) -> &HashSet<PathNodes> {
+        &self.closed_list
     }
 
-    pub fn get_closed_nodes(&self) -> &HashSet<PathNodes> {
-        return &self.closed_list;
-
+    fn get_path_nodes(&self) -> &Vector<PathNodes> {
+        &self.path_list
     }
 
-    pub fn get_path_nodes(&self) -> &Vector<PathNodes> {
-        return &self.path_list;
+    fn get_algorithm_state(&self) -> &PathAlgorithmState {
+        &self.algorithm_state
     }
-
 }

@@ -7,14 +7,9 @@
 // Implement Maze algorithm
 // Have algorithms run in their own thread
 
-
-mod pathfinding_algorithms;
-mod maze_algorithms;
-
 mod data {
     pub mod app_data;
     pub mod distance_heuristics;
-    pub mod pathfinding_types;
 }
 
 mod gui {
@@ -22,16 +17,33 @@ mod gui {
     pub mod controllers;
 
     pub mod grid_widget {
-        pub mod grid_widget_data;
-        pub mod grid_widget_view;
+        pub mod square_grid_widget_data;
+        pub mod square_grid_widget_view;
     }
 }
 
+mod pathfinding_algorithms {
+    pub mod pathfinding_types;
+    pub mod astar;
+    pub mod dijkstra;
+    pub mod bfs;
+    pub mod dfs;
+    pub mod swarm;
+    pub mod jump_point;
+    pub mod greedy_best_first;
+}
 
-use crate::data::pathfinding_types::*;
+mod maze_generation_algorithms {
+    pub mod maze_generation_types;
+
+}
+
 use crate::data::app_data::*;
 use crate::gui::view::make_ui;
-use crate::gui::grid_widget::grid_widget_data::{GridWidgetData, GridNodePosition, Grid};
+use crate::gui::grid_widget::square_grid_widget_data::{GridWidgetData, GridNodePosition, Grid};
+use crate::pathfinding_algorithms::pathfinding_types::*;
+use crate::pathfinding_algorithms::{astar::Astar};
+use crate::maze_generation_algorithms::maze_generation_types::*;
 
 // Druid imports
 
@@ -54,8 +66,10 @@ fn main() {
         is_running: false,
         updates_per_second: 10.0,
         grid_data: GridWidgetData::new(Grid::new(GridNodePosition{row: 20, col: 10}, GridNodePosition{row:20, col:50})),
-        path_tool: PathAlgorithms::Astar,
-        maze_tool: MazeAlgorithms::Random,        
+        path_tool: PathAlgorithms::Astar(Astar::new()),
+        path_config: PathfinderConfig::new(),
+        maze_tool: MazeAlgorithms::RecursiveBacktrace,
+        maze_run: false,       
     };
     AppLauncher::with_window(main_window)
         .configure_env(|env, _| {

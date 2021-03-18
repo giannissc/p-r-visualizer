@@ -2,7 +2,6 @@ use druid::{Data, Lens, Selector};
 use druid::im::{HashMap, HashSet};
 use druid::im::hashmap::Iter;
 
-
 pub const LOCK_DRAWING: Selector =  Selector::new("lock-drawing");
 pub const UNLOCK_DRAWING: Selector =  Selector::new("unlock-drawing");
 pub const RESET: Selector =  Selector::new("RESET");
@@ -181,8 +180,12 @@ impl Grid {
         unimplemented!()
     }
 
-    pub fn add_node_area(&mut self, _pos: GridNodePosition, _row_n: usize, _column_n: usize, _tool: GridNodeType<Net>) {
-        unimplemented!()
+    pub fn add_node_area(&mut self, pos: GridNodePosition, row_n: usize, column_n: usize, tool: GridNodeType<Net>, net: Net) {
+        for row in pos.row..pos.row+row_n {
+            for  column in pos.col..pos.col+column_n {
+                self.add_node(&GridNodePosition{row:row, col:column}, tool, net);
+            }
+        }
     }
 
     pub fn remove_node_area(&mut self, _pos: GridNodePosition, _row_n: usize, _column_n: usize, _tool: GridNodeType<Net>) {
@@ -191,10 +194,10 @@ impl Grid {
 
     pub fn add_node_perimeter(&mut self, pos: GridNodePosition, row_n: usize, column_n: usize, tool: GridNodeType<Net>, net: Net) {
         for row in pos.row..pos.row+row_n {
-            println!("Row: {:?}", row);
+            //println!("Row: {:?}", row);
             if row == pos.row || row == pos.row + row_n -1 {
                 // Top and Bottom Boundaries
-                println!("Printing top/bottom boundary");
+                //println!("Printing top/bottom boundary");
                 for  column in pos.col..pos.col+column_n {
                     self.add_node(&GridNodePosition{row:row, col:column}, tool, net);
                 }

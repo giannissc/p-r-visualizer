@@ -20,7 +20,8 @@ pub struct NodeTypesInternal {
 
 use druid::{BoxConstraints, Data, Env, Event, EventCtx, LayoutCtx, Lens, LifeCycle, LifeCycleCtx, MouseButton, PaintCtx, RenderContext, UpdateCtx, Widget,};
 use druid::{Color, Point, Rect, Size};
-use super::grid_widget_data::*;
+use super::square_grid_widget_data::*;
+use druid_color_thesaurus::*;
 
 //////////////////////////////////////////////////////////////////////////////////////
 //
@@ -161,10 +162,12 @@ impl Widget<GridWidgetData> for GridWidget {
 
     fn update(&mut self, ctx: &mut UpdateCtx, old_data: &GridWidgetData, data: &GridWidgetData, _env: &Env) {
         if (data.grid.len() as i64 - old_data.grid.len() as i64).abs() > 1 {
+            //println!("Painting the whole window 1");
             ctx.request_paint();
         }
 
         if data.show_grid_axis != old_data.show_grid_axis {
+            //println!("Painting the whole window 2");
             ctx.request_paint();
         }
     }
@@ -203,12 +206,12 @@ impl Widget<GridWidgetData> for GridWidget {
             //ctx.stroke(rect, &Color::AQUA, 5.0);
 
             match cell_type {
-                GridNodeType::Wall => ctx.fill(rect, &self.color),
-                GridNodeType::StartNode(_) => ctx.fill(rect, &Color::AQUA),
-                GridNodeType::TargetNode(_) => ctx.fill(rect, &Color::PURPLE),
-                GridNodeType::UnexploredNodes(_) => ctx.fill(rect, &Color::rgb8(255, 191, 0)),
-                GridNodeType::ExploredNodes(_) => ctx.fill(rect, &Color::MAROON),
-                GridNodeType::ChosenPath(_) => ctx.fill(rect, &Color::GREEN),
+                GridNodeType::Wall => ctx.fill(rect, &black::ONYX),
+                GridNodeType::StartNode(_) => ctx.fill(rect, &blue::ARGENTINIAN_BLUE),
+                GridNodeType::TargetNode(_) => ctx.fill(rect, &purple::PURPUREUS),
+                GridNodeType::UnexploredNodes(_) => ctx.fill(rect, &yellow::YELLOW_AMBER),
+                GridNodeType::ExploredNodes(_) => ctx.fill(rect, &brown::MAROON),
+                GridNodeType::ChosenPath(_) => ctx.fill(rect, &green::PERSIAN_GREEN),
                 _ => (),
             }
         }

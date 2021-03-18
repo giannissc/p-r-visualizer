@@ -4,12 +4,13 @@ use druid::widget::{Button, Flex, Label, MainAxisAlignment, CrossAxisAlignment, 
 use druid_widget_nursery::{DropdownSelect};
 use druid::im::vector;
 
-use super::grid_widget::grid_widget_data::*;
-use super::grid_widget::grid_widget_view::GridWidget;
-use crate::gui::controllers::TimerController;
+use super::grid_widget::square_grid_widget_data::*;
+use super::grid_widget::square_grid_widget_view::GridWidget;
+use crate::gui::controllers::{PathfinderController};
 use crate::data::app_data::*;
-use crate::PathAlgorithms;
-use crate::MazeAlgorithms;
+use crate::pathfinding_algorithms::pathfinding_types::*;
+use crate::pathfinding_algorithms::{astar::Astar, dijkstra::Dijkstra, bfs::BFS, dfs::DFS, swarm::Swarm};
+use crate::maze_generation_algorithms::maze_generation_types::*;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 /// UI functions
@@ -34,8 +35,8 @@ pub fn make_ui() -> impl Widget<AppData> {
                                     .with_flex_child(make_next_button(), 1.0)
                                     .with_flex_child(make_clear_button(), 1.0,)
                                     .with_flex_child(make_tool_dropdown(), 1.0)
-                                    .with_flex_child(make_path_dropdown(), 1.0)
-                                    .with_flex_child(make_maze_dropdown(), 1.0)
+                                    //.with_flex_child(make_path_dropdown(), 1.0)
+                                    //.with_flex_child(make_maze_dropdown(), 1.0)
                                     .padding(8.0), 
                             1.0)
                         .with_child(make_grid_lines_button())
@@ -59,7 +60,8 @@ pub fn make_ui() -> impl Widget<AppData> {
                         .padding(8.0),
                 ).background(BACKGROUND),     
             ).main_axis_alignment(MainAxisAlignment::SpaceBetween).cross_axis_alignment(CrossAxisAlignment::Center)
-            .controller(TimerController::new())
+            .controller(PathfinderController::new())
+            
 }
 
 fn make_run_button() -> impl Widget<AppData> {
@@ -117,7 +119,6 @@ fn make_clear_button() -> impl Widget<AppData> {
     .on_click(|ctx, data: &mut GridWidgetData, _: &Env| {
         data.grid.clear_all();
         ctx.submit_command(RESET);
-        ctx.request_paint();
     }).lens(AppData::grid_data).padding((5., 5.))
 }
 
@@ -131,19 +132,21 @@ fn make_tool_dropdown() -> impl Widget<AppData> {
 }
 
 fn make_path_dropdown() -> impl Widget<AppData> {
+    println!("Calling path dropdown");
     DropdownSelect::new(vector![
-        ("A star", PathAlgorithms::Astar),
-        ("Dijkstra", PathAlgorithms::Dijkstra),
-        ("Swarm", PathAlgorithms::Swarm),
-        ("Jump Point", PathAlgorithms::JumpPoint),
+        ("A star", PathAlgorithms::Astar(Astar::new())),
+        ("Dijkstra", PathAlgorithms::Dijkstra(Dijkstra::new())),
+        ("BFS", PathAlgorithms::BFS(BFS::new())),
+        ("DFS", PathAlgorithms::DFS(DFS::new())),
+        ("Swarm", PathAlgorithms::Swarm(Swarm::new())),
     ]).lens(AppData::path_tool).padding((5., 5.))
 }
 
 fn make_maze_dropdown() -> impl Widget<AppData> {
     DropdownSelect::new(vector![
-        ("Random", MazeAlgorithms::Random),
-        ("Recusrive Subdivision", MazeAlgorithms::RecursiveSubdivision),
         ("Recursive Backtrace", MazeAlgorithms::RecursiveBacktrace),
+        ("Recusrive Subdivision", MazeAlgorithms::RecursiveSubdivision),
+        ("Random", MazeAlgorithms::Random),
     ]).lens(AppData::maze_tool).padding((5., 5.))
 }
 

@@ -1,7 +1,8 @@
 use druid::{Lens, Data, Color, WidgetId};
 
-use crate::{data::pathfinding_types::*, };
-use crate::gui::grid_widget::grid_widget_data::GridWidgetData;
+use crate::pathfinding_algorithms::pathfinding_types::{PathAlgorithms, PathfinderConfig};
+use crate::maze_generation_algorithms::maze_generation_types::MazeAlgorithms;
+use crate::gui::grid_widget::square_grid_widget_data::GridWidgetData;
 
 //////////////////////////////////////////////////////////////////////////////////////
 // Constants
@@ -24,7 +25,9 @@ pub struct AppData {
     pub updates_per_second: f64,
     pub grid_data: GridWidgetData,    
     pub path_tool: PathAlgorithms,
+    pub path_config: PathfinderConfig,
     pub maze_tool: MazeAlgorithms,
+    pub maze_run: bool,
 }
 
 impl AppData {
