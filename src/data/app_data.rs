@@ -7,8 +7,8 @@ use crate::gui::grid_widget::square_grid_widget_data::GridWidgetData;
 //////////////////////////////////////////////////////////////////////////////////////
 // Constants
 //////////////////////////////////////////////////////////////////////////////////////
-pub const GRID_COLUMNS: usize = 80; 
-pub const GRID_ROWS: usize = 30; 
+pub const GRID_COLUMNS: usize = 81; 
+pub const GRID_ROWS: usize = 31; 
 pub const COLOR: Color = Color::BLACK;
 pub const BACKGROUND: Color = Color::grey8(23);
 pub const GRID_ID: WidgetId = WidgetId::reserved(1);
@@ -27,7 +27,7 @@ pub struct AppData {
     pub path_tool: PathAlgorithms,
     pub path_config: PathfinderConfig,
     pub maze_tool: MazeAlgorithms,
-    pub maze_run: bool,
+    pub pathfinder_mode: bool,
 }
 
 impl AppData {

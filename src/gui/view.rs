@@ -1,6 +1,6 @@
 
-use druid::{WidgetExt, Env, Widget, EventCtx };
-use druid::widget::{Button, Flex, Label, MainAxisAlignment, CrossAxisAlignment, Slider, Checkbox,};
+use druid::{Env, EventCtx, Widget, WidgetExt, TextLayout};
+use druid::widget::{Button, Flex, Label, MainAxisAlignment, CrossAxisAlignment, Slider, Checkbox, Switch, LensWrap};
 use druid_widget_nursery::{DropdownSelect};
 use druid::im::vector;
 
@@ -11,6 +11,7 @@ use crate::data::app_data::*;
 use crate::pathfinding_algorithms::pathfinding_types::*;
 use crate::pathfinding_algorithms::{astar::Astar, dijkstra::Dijkstra, bfs::BFS, dfs::DFS, swarm::Swarm};
 use crate::maze_generation_algorithms::maze_generation_types::*;
+use crate::maze_generation_algorithms::{random::Random, recursive_subdivision::RecursiveSubdivision, recursive_backtrace::RecursiveBacktrace};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 /// UI functions
@@ -20,6 +21,7 @@ pub fn make_ui() -> impl Widget<AppData> {
     let grid = Flex::column().with_child(GridWidget::new(COLOR, GRID_ROWS, GRID_COLUMNS).with_id(GRID_ID).lens(AppData::grid_data));
     //let grid = Flex::column().with_child(GridWidget::new(COLOR, GRID_ROWS, GRID_COLUMNS).lens(AppData::grid_data).debug_invalidation());
 
+    let switch = LensWrap::new(Switch::new(), AppData::pathfinder_mode);
     Flex::column()
         .with_flex_child(grid,1.0)
         .with_child(
@@ -36,6 +38,7 @@ pub fn make_ui() -> impl Widget<AppData> {
                                     .with_flex_child(make_clear_button(), 1.0,)
                                     .with_flex_child(make_tool_dropdown(), 1.0)
                                     //.with_flex_child(make_path_dropdown(), 1.0)
+                                    .with_flex_child(switch, 1.0)
                                     //.with_flex_child(make_maze_dropdown(), 1.0)
                                     .padding(8.0), 
                             1.0)
@@ -52,7 +55,7 @@ pub fn make_ui() -> impl Widget<AppData> {
                         )
                         .with_flex_child(
                             Slider::new()
-                                .with_range(0.2, 500.0)
+                                .with_range(0.5, 1000.0)
                                 .expand_width()
                                 .lens(AppData::updates_per_second),
                             1.,
@@ -144,9 +147,9 @@ fn make_path_dropdown() -> impl Widget<AppData> {
 
 fn make_maze_dropdown() -> impl Widget<AppData> {
     DropdownSelect::new(vector![
-        ("Recursive Backtrace", MazeAlgorithms::RecursiveBacktrace),
-        ("Recusrive Subdivision", MazeAlgorithms::RecursiveSubdivision),
-        ("Random", MazeAlgorithms::Random),
+        ("Recursive Backtrace", MazeAlgorithms::RecursiveBacktrace(RecursiveBacktrace::new())),
+        ("Recusrive Subdivision", MazeAlgorithms::RecursiveSubdivision(RecursiveSubdivision::new())),
+        ("Random", MazeAlgorithms::Random(Random::new())),
     ]).lens(AppData::maze_tool).padding((5., 5.))
 }
 

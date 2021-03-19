@@ -2,14 +2,15 @@ use super::pathfinding_types::*;
 use druid::Data;
 use druid::im::{Vector, HashSet};
 use crate::gui::grid_widget::square_grid_widget_data::*;
+use crate::data::app_data::{GRID_COLUMNS, GRID_ROWS};
 
 #[derive(Data, Clone, Eq, PartialEq, Debug)]
 pub struct Astar{
-    pub algorithm_state: PathAlgorithmState,
-    pub open_list: HashSet<PathNodes>,
-    pub closed_list: HashSet<PathNodes>,
-    pub path_list: Vector<PathNodes>,
-    pub current_path_node: PathNodes, 
+    algorithm_state: PathAlgorithmState,
+    open_list: HashSet<PathNodes>,
+    closed_list: HashSet<PathNodes>,
+    path_list: Vector<PathNodes>,
+    current_path_node: PathNodes, 
 }
 
 impl Astar {
@@ -24,7 +25,7 @@ impl Astar {
     }
 }
 
-impl PathfinderAlgorithm for Astar {
+impl PathFinderAlgorithm for Astar {
     fn run(&mut self, grid: &mut Grid, config: &mut PathfinderConfig) {
         todo!()
     }
@@ -33,16 +34,18 @@ impl PathfinderAlgorithm for Astar {
     fn next_step(&mut self, grid: &mut Grid, config: &mut PathfinderConfig) -> PathAlgorithmState{
         if self.algorithm_state == PathAlgorithmState::Initialization {
             //println!("Setting up algorithm");
-            self.open_list.insert(PathNodes::new(0, grid.end_node, grid.start_node, None)); // Step 1: Add the starting node to the open list
+            self.current_path_node = PathNodes::new(0, grid.end_node, grid.start_node, None);
+            self.open_list.insert(self.current_path_node); // Step 1: Add the starting node to the open list
             self.algorithm_state = PathAlgorithmState::Running;     
             grid.clear_paths();      
+            grid.add_node_perimeter(GridNodePosition{row:0, col:0}, GRID_ROWS, GRID_COLUMNS, GridNodeType::Wall, 1)
         } else if self.algorithm_state == PathAlgorithmState::Running {
-            match self.get_next_node(config){
+            match self.get_next_node(){
                 None => {self.algorithm_state = PathAlgorithmState::Failed},
                 Some(current_node) => {
                     self.open_list.remove(&current_node); // Step 2: Remove lower cost node from the open list
                     self.closed_list.insert(current_node); // Step 3: Add current node to the closed list
-                    for node in grid.neighbours_rectilinear(current_node.position).iter(){// Step 4: Generate list of neighbours
+                    for node in grid.available_neighbours_rectilinear(current_node.position).iter(){// Step 4: Generate list of neighbours
                         // Step 4.1: Ignore if it is not walkable (already checked that in neighbours function)
                         match node {
                             None => (), // Step 4.1: Node is not walkable
@@ -72,23 +75,23 @@ impl PathfinderAlgorithm for Astar {
             }
 
         } else if self.algorithm_state == PathAlgorithmState::PathConstruction {
-            self.construct_path(config);
+            self.construct_path();
         }
         self.algorithm_state
     }
 
-    fn previous_step(&mut self) {
+    fn previous_step(&mut self, grid: &mut Grid, config: &mut PathfinderConfig) {
         todo!()
     }
 
-    fn reset(&mut self, config: &mut PathfinderConfig) {
+    fn reset(&mut self) {
         self.open_list.clear();
         self.closed_list.clear();
         self.path_list.clear();
         self.algorithm_state = PathAlgorithmState::Initialization;
     }
 
-    fn construct_path(&mut self, config: &mut PathfinderConfig) {
+    fn construct_path(&mut self) {
         //println!("Constructing Path");
         let current_node = self.current_path_node;
         self.path_list.push_front(current_node);
@@ -103,7 +106,7 @@ impl PathfinderAlgorithm for Astar {
         }
     }
 
-    fn get_next_node(&self, config: &PathfinderConfig) -> Option<PathNodes> {
+    fn get_next_node(&self) -> Option<PathNodes> {
         // Gen min cost node for A*
         let mut min_cost = std::i64::MAX;
         let mut min_node: Option<PathNodes> = None;

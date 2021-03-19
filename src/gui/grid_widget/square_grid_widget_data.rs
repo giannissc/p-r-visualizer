@@ -214,24 +214,47 @@ impl Grid {
         unimplemented!()
     }
 
-    pub fn neighbours_rectilinear(&self, pos: GridNodePosition) -> [Option<GridNodePosition>; 4]{
+    pub fn available_neighbours_rectilinear(&self, pos: GridNodePosition) -> [Option<GridNodePosition>; 4]{
         let mut result: [Option<GridNodePosition>; 4] = [None; 4];
         for (index, node) in pos.neighbors_rectilinear().iter().enumerate(){
-            if !self.storage.contains_key(node) || self.storage.get(node) != Some(&GridNodeType::Wall){
-                result[index] = Some(*node);
-            }
+            result[index] = self.check_if_wall(node)
         }
         result
     }
 
-    pub fn neighbours_octilinear(&self, pos: GridNodePosition) -> [Option<GridNodePosition>; 8]{
+    pub fn available_neighbours_octilinear(&self, pos: GridNodePosition) -> [Option<GridNodePosition>; 8]{
         let mut result: [Option<GridNodePosition>; 8] = [None; 8];
         for (index, node) in pos.neighbors_octilinear().iter().enumerate(){
-            if !self.storage.contains_key(node) || self.storage.get(node) != Some(&GridNodeType::Wall){
-                result[index] = Some(*node);
-            }
+            result[index] = self.check_if_wall(node)
         }
         result
+    }
+
+    pub fn available_above(&self, pos: GridNodePosition) -> Option<GridNodePosition> {
+        let node = &pos.above();
+        self.check_if_wall(node)        
+    }
+
+    pub fn available_below(&self, pos: GridNodePosition) -> Option<GridNodePosition> {
+        let node = &pos.below();
+        self.check_if_wall(node)        
+    }
+
+    pub fn available_left(&self, pos: GridNodePosition) -> Option<GridNodePosition> {
+        let node = &pos.left();
+        self.check_if_wall(node)        
+    }
+
+    pub fn available_right(&self, pos: GridNodePosition) -> Option<GridNodePosition> {
+        let node = &pos.right();
+        self.check_if_wall(node)        
+    }
+
+    fn check_if_wall(&self, node: &GridNodePosition) -> Option<GridNodePosition> {
+        if !self.storage.contains_key(&node) || self.storage.get(&node) != Some(&GridNodeType::Wall){
+            return Some(*node)
+        }
+        return None; 
     }
 }
 

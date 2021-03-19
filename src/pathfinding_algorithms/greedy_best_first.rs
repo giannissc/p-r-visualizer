@@ -4,11 +4,11 @@ use druid::im::{Vector, HashSet};
 
 #[derive(Data, Clone, Eq, PartialEq, Debug)]
 pub struct GreedyBestFirstSearch{
-    pub algorithm_state: PathAlgorithmState,
-    pub open_list: HashSet<PathNodes>,
-    pub closed_list: HashSet<PathNodes>,
-    pub path_list: Vector<PathNodes>,
-    pub current_path_node: PathNodes, 
+    algorithm_state: PathAlgorithmState,
+    open_list: HashSet<PathNodes>,
+    closed_list: HashSet<PathNodes>,
+    path_list: Vector<PathNodes>,
+    current_path_node: PathNodes, 
 }
 
 impl GreedyBestFirstSearch {
@@ -23,7 +23,7 @@ impl GreedyBestFirstSearch {
     }
 }
 
-impl PathfinderAlgorithm for GreedyBestFirstSearch {
+impl PathFinderAlgorithm for GreedyBestFirstSearch {
     fn run(&mut self, grid: &mut crate::gui::grid_widget::square_grid_widget_data::Grid, config: &mut PathfinderConfig) {
         todo!()
     }
@@ -32,19 +32,19 @@ impl PathfinderAlgorithm for GreedyBestFirstSearch {
         todo!()
     }
 
-    fn previous_step(&mut self) {
+    fn previous_step(&mut self, grid: &mut crate::gui::grid_widget::square_grid_widget_data::Grid, config: &mut PathfinderConfig) {
         todo!()
     }
 
-    fn reset(&mut self, config: &mut PathfinderConfig) {
+    fn reset(&mut self) {
         todo!()
     }
 
-    fn construct_path(&mut self, config: &mut PathfinderConfig) {
+    fn construct_path(&mut self) {
         todo!()
     }
 
-    fn get_next_node(&self, config: &PathfinderConfig) -> Option<PathNodes> {
+    fn get_next_node(&self) -> Option<PathNodes> {
         todo!()
     }
 

@@ -10,3 +10,4 @@ edition = "2018"
 druid = { git = "https://github.com/linebender/druid.git", rev = "3661030", features = ["im"]}
 druid-widget-nursery = {git = "https://github.com/linebender/druid-widget-nursery.git"}
 druid-color-thesaurus = {git = "https://github.com/giannissc/druid-color-thesaurus.git"}
+rand = "0.8.3"

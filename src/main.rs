@@ -9,7 +9,6 @@
 
 mod data {
     pub mod app_data;
-    pub mod distance_heuristics;
 }
 
 mod gui {
@@ -31,10 +30,14 @@ mod pathfinding_algorithms {
     pub mod swarm;
     pub mod jump_point;
     pub mod greedy_best_first;
+    pub mod distance_heuristics;
 }
 
 mod maze_generation_algorithms {
     pub mod maze_generation_types;
+    pub mod random;
+    pub mod recursive_backtrace;
+    pub mod recursive_subdivision;
 
 }
 
@@ -43,6 +46,7 @@ use crate::gui::view::make_ui;
 use crate::gui::grid_widget::square_grid_widget_data::{GridWidgetData, GridNodePosition, Grid};
 use crate::pathfinding_algorithms::pathfinding_types::*;
 use crate::pathfinding_algorithms::{astar::Astar};
+use crate::maze_generation_algorithms::{recursive_backtrace::RecursiveBacktrace};
 use crate::maze_generation_algorithms::maze_generation_types::*;
 
 // Druid imports
@@ -68,8 +72,8 @@ fn main() {
         grid_data: GridWidgetData::new(Grid::new(GridNodePosition{row: 20, col: 10}, GridNodePosition{row:20, col:50})),
         path_tool: PathAlgorithms::Astar(Astar::new()),
         path_config: PathfinderConfig::new(),
-        maze_tool: MazeAlgorithms::RecursiveBacktrace,
-        maze_run: false,       
+        maze_tool: MazeAlgorithms::RecursiveBacktrace(RecursiveBacktrace::new()),
+        pathfinder_mode: true,       
     };
     AppLauncher::with_window(main_window)
         .configure_env(|env, _| {

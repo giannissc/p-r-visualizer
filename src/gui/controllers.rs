@@ -1,10 +1,9 @@
 use druid::{widget::Controller, Env, EventCtx, Widget, TimerToken, Event,};
-use std::time::{Duration, Instant};
+use std::{time::{Duration, Instant}};
 
 use crate::data::app_data::{AppData, GRID_COLUMNS, GRID_ROWS};
-use crate::pathfinding_algorithms::*;
 use crate::maze_generation_algorithms::maze_generation_types::*;
-use crate::pathfinding_algorithms::pathfinding_types::{PathAlgorithmState, PathAlgorithms};
+use crate::pathfinding_algorithms::pathfinding_types::{PathAlgorithmState};
 use crate::gui::grid_widget::square_grid_widget_data::*;
 
 pub struct PathfinderController {
@@ -25,7 +24,7 @@ impl <W: Widget<AppData>> Controller<AppData, W> for PathfinderController {
     fn event(&mut self, child: &mut W, ctx: &mut EventCtx, event: &Event, data: &mut AppData, env: &Env) {
         match event {
             Event::WindowConnected => {
-                let deadline = Duration::from_millis(data.iter_interval());
+                let deadline = Duration::from_micros(data.iter_interval());
                 self.last_update = Instant::now();
                 self.timer_id = ctx.request_timer(deadline);           
             }
@@ -33,36 +32,55 @@ impl <W: Widget<AppData>> Controller<AppData, W> for PathfinderController {
             Event::Timer(id) => {
                 
                 if *id == self.timer_id {
-                    let algorithm = data.path_tool.get_inner();
-                    if !data.is_paused && data.is_running  && algorithm.get_algorithm_state() != &PathAlgorithmState::Finished { // Run the algorithm
+                    
+                    if !data.is_paused && data.is_running {
+                        if data.pathfinder_mode {
+                            let algorithm = data.path_tool.get_inner();
+                            let init_state = &PathAlgorithmState::Initialization;
+                            let failed_state = &PathAlgorithmState::Failed;
+                            let finished_state =  &PathAlgorithmState::Finished;
 
-                        if algorithm.get_algorithm_state() == &PathAlgorithmState::Initialization {
-                            data.grid_data.grid.add_node_perimeter(GridNodePosition{row:0, col:0}, GRID_ROWS, GRID_COLUMNS, GridNodeType::Wall, 1)
+                            if algorithm.get_algorithm_state() != failed_state && algorithm.get_algorithm_state() != finished_state { // Run the algorithm
+                                println!("Pathfinding algorithm running");
 
+                                if algorithm.next_step(&mut data.grid_data.grid, &mut data.path_config) == *finished_state {
+                                    data.grid_data.interaction_state = Interaction::None;
+                                }
+        
+                                for node in algorithm.get_open_nodes().iter(){
+                                    data.grid_data.grid.add_node(&node.position, GridNodeType::UnexploredNodes(data.grid_data.selected_net), data.grid_data.selected_net);
+                                }
+        
+                                for node in algorithm.get_closed_nodes().iter(){
+                                    data.grid_data.grid.add_node(&node.position, GridNodeType::ExploredNodes(data.grid_data.selected_net), data.grid_data.selected_net);                            
+                                }
+        
+                                for node in algorithm.get_path_nodes().iter(){
+                                    data.grid_data.grid.add_node(&node.position, GridNodeType::ChosenPath(data.grid_data.selected_net), data.grid_data.selected_net);                            
+                                }
+
+                                println!("Painting");
+                                ctx.request_paint(); // Change to partial paint? Move to each for loop                                
+                            }
+    
+                        } else {
+                            let algorithm = data.maze_tool.get_inner();
+                            let init_state = &MazeAlgorithmState::Initialization;
+                            let failed_state = &MazeAlgorithmState::Failed;
+                            let finished_state =  &MazeAlgorithmState::Finished;
+
+                            if algorithm.get_algorithm_state() != failed_state && algorithm.get_algorithm_state() != finished_state {
+                                println!("Maze generation algorithm running");
+                                if algorithm.next_step(&mut data.grid_data.grid) == *finished_state {
+                                    data.grid_data.interaction_state = Interaction::None;
+                                }
+                                ctx.request_paint(); // Change to partial paint? Move to each for loop                                
+                            }
+                            
                         }
                         
-                        //println!("Algorithm running");
-                        if algorithm.next_step(&mut data.grid_data.grid, &mut data.path_config) == PathAlgorithmState::Finished {
-                            //data.is_running = false;
-                            data.grid_data.interaction_state = Interaction::None;
-                        }
-
-                        for node in algorithm.get_open_nodes().iter(){
-                            data.grid_data.grid.add_node(&node.position, GridNodeType::UnexploredNodes(data.grid_data.selected_net), data.grid_data.selected_net);
-                        }
-
-                        for node in algorithm.get_closed_nodes().iter(){
-                            data.grid_data.grid.add_node(&node.position, GridNodeType::ExploredNodes(data.grid_data.selected_net), data.grid_data.selected_net);                            
-                        }
-
-                        for node in algorithm.get_path_nodes().iter(){
-                            data.grid_data.grid.add_node(&node.position, GridNodeType::ChosenPath(data.grid_data.selected_net), data.grid_data.selected_net);                            
-                        }
-
-                        ctx.request_paint(); // Change to partial paint? Move to each for loop
                     }
-
-                    let deadline = Duration::from_millis(data.iter_interval());
+                    let deadline = Duration::from_micros(data.iter_interval());
                     self.last_update = Instant::now();
                     self.timer_id = ctx.request_timer(deadline);
                 }
@@ -71,8 +89,11 @@ impl <W: Widget<AppData>> Controller<AppData, W> for PathfinderController {
             Event::Command(cmd) => {
                 if cmd.is(RESET) {
                     //println!("Resetting algorithm");
-                    let mut algorithm = data.path_tool.get_inner();
-                    algorithm.reset(&mut data.path_config);
+                    let mut path_algorithm = data.path_tool.get_inner();
+                    path_algorithm.reset();
+
+                    let mut maze_algorithm = data.maze_tool.get_inner();
+                    maze_algorithm.reset();
                 }
 
                 child.event(ctx, event, data, env)

@@ -1,13 +1,24 @@
 use druid::Data;
-use druid::im::HashSet;
+use druid::im::{HashSet, Vector};
 use crate::gui::grid_widget::square_grid_widget_data::*;
 use std::hash::{Hash, Hasher, };
+use super::{recursive_backtrace::RecursiveBacktrace, recursive_subdivision::RecursiveSubdivision, random::Random};
 
-#[derive(Data, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
+#[derive(Data, Clone, Eq, PartialEq, Debug)]
 pub enum MazeAlgorithms {
-    Random,
-    RecursiveBacktrace,
-    RecursiveSubdivision,
+    Random(Random),
+    RecursiveBacktrace(RecursiveBacktrace),
+    RecursiveSubdivision(RecursiveSubdivision),
+}
+
+impl MazeAlgorithms {
+    pub fn get_inner(&mut self) -> Box<&mut dyn MazeGenerationAlgorithm> {
+        match self {
+            MazeAlgorithms::Random(inner) => {Box::new(inner)}
+            MazeAlgorithms::RecursiveBacktrace(inner) => {Box::new(inner)}
+            MazeAlgorithms::RecursiveSubdivision(inner) => {Box::new(inner)}
+        }
+    }
 }
 
 pub trait MazeGenerationAlgorithm{
@@ -15,9 +26,9 @@ pub trait MazeGenerationAlgorithm{
     fn next_step(&mut self, grid: &mut Grid)  -> MazeAlgorithmState;
     fn previous_step(&mut self);
     fn reset(&mut self);
-    fn get_next_node(&self) -> Option<MazeNodes>;
-    fn get_open_nodes(&self) -> &HashSet<MazeNodes>;
+    fn get_next_node(&mut self, grid: &mut Grid) -> Option<MazeNodes>;
     fn get_closed_nodes(&self) -> &HashSet<MazeNodes>;
+    fn get_algorithm_state(&self) -> &MazeAlgorithmState;
 }
 
 #[derive(Data, Clone, Eq, PartialEq, Debug)]

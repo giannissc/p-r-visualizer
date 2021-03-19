@@ -1,6 +1,6 @@
 use druid::{Data};
 use std::hash::{Hash, Hasher, };
-use crate::data::distance_heuristics::Heuristics;
+use super::distance_heuristics::Heuristics;
 use crate::gui::grid_widget::square_grid_widget_data::*;
 use druid::im::{HashSet, Vector};
 use super::{astar::Astar, dfs::DFS, bfs::BFS, dijkstra::Dijkstra, swarm::Swarm, jump_point::JumpPoint, greedy_best_first::GreedyBestFirstSearch};
@@ -18,7 +18,7 @@ pub enum PathAlgorithms {
 }
 
 impl PathAlgorithms {
-    pub fn get_inner(&mut self) -> Box<&mut dyn PathfinderAlgorithm>{
+    pub fn get_inner(&mut self) -> Box<&mut dyn PathFinderAlgorithm>{
         match self {
             PathAlgorithms::Astar(inner ) => {Box::new(inner)}
             PathAlgorithms::Dijkstra(inner) => {Box::new(inner)}
@@ -52,13 +52,13 @@ impl PathfinderConfig {
 // SquareGridAlgorithm
 //
 //////////////////////////////////////////////////////////////////////////////////////
-pub trait PathfinderAlgorithm{
+pub trait PathFinderAlgorithm{
     fn run(&mut self, grid: &mut Grid, config: &mut PathfinderConfig);
     fn next_step(&mut self, grid: &mut Grid, config: &mut PathfinderConfig)  -> PathAlgorithmState;
-    fn previous_step(&mut self);
-    fn reset(&mut self, config: &mut PathfinderConfig);
-    fn construct_path(&mut self, config: &mut PathfinderConfig);
-    fn get_next_node(&self, config: &PathfinderConfig) -> Option<PathNodes>;
+    fn previous_step(&mut self, grid: &mut Grid, config: &mut PathfinderConfig);
+    fn reset(&mut self);
+    fn construct_path(&mut self);
+    fn get_next_node(&self) -> Option<PathNodes>;
     fn get_open_nodes(&self) -> &HashSet<PathNodes>;
     fn get_closed_nodes(&self) -> &HashSet<PathNodes>;
     fn get_path_nodes(&self) -> &Vector<PathNodes>;
