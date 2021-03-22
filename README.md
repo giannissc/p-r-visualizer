@@ -5,8 +5,8 @@ A visualizer that will be used for the development of placement and routing algo
 ![Complex Routing](./assets/complex-routing.gif)
 
 # Roadmap
-- [ ] Pathfinder Algorithms (A*)
-- [ ] Maze Generation (Recusrive Backtrace)
+- [x] Pathfinder Algorithms (A*)
+- [x] Maze Generation (Recusrive Backtrace)
 - [ ] Pin Decomposition (Naive, Steiner Tree)
 - [ ] Multi-net Routing (Rip-up-and-Reroute)
 - [ ] Placement
