@@ -3,3 +3,10 @@ A visualizer that will be used for the development of placement and routing algo
 
 ![Simple Routing](./assets/straight-line-routing.gif)
 ![Complex Routing](./assets/complex-routing.gif)
+
+# Roadmap
+- [x] Pathfinder Algorithms (A*)
+- [x] Maze Generation (Recusrive Backtrace)
+- [ ] Pin Decomposition (Naive, Steiner Tree)
+- [ ] Multi-net Routing (Rip-up-and-Reroute)
+- [ ] Placement
