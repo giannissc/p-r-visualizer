@@ -1,5 +1,6 @@
 use std::ops::Add;
 
+use log::info;
 use rand::Rng;
 
 use super::maze_generation_types::*;
@@ -32,7 +33,7 @@ impl MazeGenerationAlgorithm for RecursiveBacktrace {
 
     fn next_step(&mut self, grid: &mut crate::gui::grid_widget::square_grid_widget_data::Grid)  -> MazeAlgorithmState {
         if self.algorithm_state == MazeAlgorithmState::Initialization {
-            //println!("Setting up algorithm");
+            info!("Setting up algorithm");
             // Generate a random point as the starting point and set as current path node
             let mut rng = rand::thread_rng();
             let row = rng.gen_range(1..GRID_ROWS);

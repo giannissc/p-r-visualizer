@@ -20,6 +20,7 @@ pub struct NodeTypesInternal {
 
 use druid::{BoxConstraints, Data, Env, Event, EventCtx, LayoutCtx, Lens, LifeCycle, LifeCycleCtx, MouseButton, PaintCtx, RenderContext, UpdateCtx, Widget,};
 use druid::{Color, Point, Rect, Size};
+use log::{debug, info};
 use super::square_grid_widget_data::*;
 use druid_color_thesaurus::*;
 
@@ -32,7 +33,10 @@ use druid_color_thesaurus::*;
 pub struct GridWidget {
     rows: usize,
     columns: usize,
+    visible_rows: usize,
+    visible_columns: usize,
     cell_size: Size,
+    left_corner_point: GridNodePosition,
     color: Color,
 }
 
@@ -41,10 +45,13 @@ impl GridWidget {
         GridWidget {
             rows: rows,
             columns: columns,
+            visible_columns: columns,
+            visible_rows: rows,
             cell_size: Size {
                 width: 0.0,
                 height: 0.0,
             },
+            left_corner_point: GridNodePosition{row:0, col:0},
             color: color, // TODO Need color array
         }
     }
@@ -128,7 +135,8 @@ impl Widget<GridWidgetData> for GridWidget {
                 if data.interaction_state != Interaction::LockedUI || data.interaction_state != Interaction::None {
                     let grid_pos_opt = self.grid_pos(e.pos);
                     grid_pos_opt.iter().for_each(|pos| {
-                        //println!("Event Move: {:?}", *pos);
+                        debug!("Event Move: {:?}", *pos);
+
                         if data.interaction_state == Interaction::Drawing {
                             if data.selected_tool == GridNodeType::Empty {
                                 data.grid.remove_node(pos);
@@ -162,12 +170,12 @@ impl Widget<GridWidgetData> for GridWidget {
 
     fn update(&mut self, ctx: &mut UpdateCtx, old_data: &GridWidgetData, data: &GridWidgetData, _env: &Env) {
         if (data.grid.len() as i64 - old_data.grid.len() as i64).abs() > 1 {
-            //println!("Painting the whole window 1");
+            info!("Painting the whole window 1");
             ctx.request_paint();
         }
 
         if data.show_grid_axis != old_data.show_grid_axis {
-            //println!("Painting the whole window 2");
+            info!("Painting the whole window on grid axis change");
             ctx.request_paint();
         }
     }
@@ -192,7 +200,7 @@ impl Widget<GridWidgetData> for GridWidget {
         };
         self.cell_size = cell_size;
 
-        //println!("Cell size: {:?}", cell_size);
+        debug!("Cell size: {:?}", cell_size);
         
         // Draw grid cells
         for (cell_pos, cell_type) in data.grid.iter(){

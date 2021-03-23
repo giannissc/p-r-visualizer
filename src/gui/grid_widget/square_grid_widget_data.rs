@@ -1,6 +1,7 @@
 use druid::{Data, Lens, Selector};
 use druid::im::{HashMap, HashSet};
 use druid::im::hashmap::Iter;
+use log::{debug, info};
 
 pub const LOCK_DRAWING: Selector =  Selector::new("lock-drawing");
 pub const UNLOCK_DRAWING: Selector =  Selector::new("unlock-drawing");
@@ -194,14 +195,16 @@ impl Grid {
 
     pub fn add_node_perimeter(&mut self, pos: GridNodePosition, row_n: usize, column_n: usize, tool: GridNodeType<Net>, net: Net) {
         for row in pos.row..pos.row+row_n {
-            //println!("Row: {:?}", row);
+            info!("Add node perimeter");
+            debug!("Row: {:?}", row);
             if row == pos.row || row == pos.row + row_n -1 {
                 // Top and Bottom Boundaries
-                //println!("Printing top/bottom boundary");
+                info!("Printing top/bottom boundary");
                 for  column in pos.col..pos.col+column_n {
                     self.add_node(&GridNodePosition{row:row, col:column}, tool, net);
                 }
             } else {  
+                info!("Printing left/right boundary");
                 // Left Boundary
                 self.add_node(&GridNodePosition{row:row, col:pos.col}, tool, net);
                 // Right Boundary

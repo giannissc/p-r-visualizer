@@ -31,7 +31,7 @@ pub struct AppData {
 }
 
 impl AppData {
-    pub fn iter_interval(&self) -> u64 {
+    pub fn to_period_milli(&self) -> u64 {
         (1000. / self.updates_per_second) as u64
     }
 }

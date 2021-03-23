@@ -1,6 +1,7 @@
 use super::pathfinding_types::*;
 use druid::Data;
 use druid::im::{Vector, HashSet};
+use log::debug;
 use crate::gui::grid_widget::square_grid_widget_data::*;
 use crate::data::app_data::{GRID_COLUMNS, GRID_ROWS};
 
@@ -33,7 +34,7 @@ impl PathFinderAlgorithm for Astar {
 
     fn next_step(&mut self, grid: &mut Grid, config: &mut PathfinderConfig) -> PathAlgorithmState{
         if self.algorithm_state == PathAlgorithmState::Initialization {
-            //println!("Setting up algorithm");
+            info!("Setting up algorithm");
             self.current_path_node = PathNodes::new(0, grid.end_node, grid.start_node, None);
             self.open_list.insert(self.current_path_node); // Step 1: Add the starting node to the open list
             self.algorithm_state = PathAlgorithmState::Running;     
@@ -92,12 +93,12 @@ impl PathFinderAlgorithm for Astar {
     }
 
     fn construct_path(&mut self) {
-        //println!("Constructing Path");
+        debug!("Constructing Path");
         let current_node = self.current_path_node;
         self.path_list.push_front(current_node);
-        //println!("Current node: {:?}", current_node);         
+        debug!("Current node: {:?}", current_node);         
         let parent_node = self.closed_list.remove(&PathNodes::reduced(current_node.parent.unwrap())).unwrap();
-        //println!("Parent node: {:?}", parent_node); 
+        debug!("Parent node: {:?}", parent_node); 
         
         if parent_node.parent == None {
             self.algorithm_state = PathAlgorithmState::Finished;

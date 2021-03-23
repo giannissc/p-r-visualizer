@@ -52,6 +52,7 @@ use crate::maze_generation_algorithms::maze_generation_types::*;
 // Druid imports
 
 use druid::{ theme, AppLauncher, LocalizedString, WindowDesc,Color, };
+use simple_log::quick;
 
 
 
@@ -77,7 +78,7 @@ fn main() {
     };
     AppLauncher::with_window(main_window)
         .configure_env(|env, _| {
-            env.set(theme::SELECTION_COLOR, Color::rgb8(0xA6, 0xCC, 0xFF));
+            env.set(theme::SELECTION_TEXT_COLOR, Color::rgb8(0xA6, 0xCC, 0xFF));
             env.set(theme::WINDOW_BACKGROUND_COLOR, Color::WHITE);
             env.set(theme::LABEL_COLOR, Color::WHITE);
             env.set(theme::CURSOR_COLOR, Color::BLACK);
