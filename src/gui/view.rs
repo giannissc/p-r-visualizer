@@ -19,12 +19,12 @@ use crate::maze_generation_algorithms::{random::Random, recursive_subdivision::R
 
 pub fn make_ui() -> impl Widget<AppData> {
     let cell_size = Size{
-        width: 5.0,
-        height: 5.0,
+        width: 1.0,
+        height: 1.0,
         
     };
-    //let grid = Flex::column().with_flex_child(GridWidget::new(COLOR, GRID_ROWS, GRID_COLUMNS, cell_size).with_id(GRID_ID).lens(AppData::grid_data),1.0);
-    let grid = Flex::column().with_flex_child(GridWidget::new(COLOR, GRID_ROWS, GRID_COLUMNS, cell_size).with_id(GRID_ID).lens(AppData::grid_data).debug_invalidation(),1.0);
+    let grid = Flex::column().with_flex_child(GridWidget::new(COLOR, GRID_ROWS, GRID_COLUMNS, cell_size).with_id(GRID_ID).lens(AppData::grid_data),1.0);
+    //let grid = Flex::column().with_flex_child(GridWidget::new(COLOR, GRID_ROWS, GRID_COLUMNS, cell_size).with_id(GRID_ID).lens(AppData::grid_data).debug_invalidation(),1.0);
     let switch = LensWrap::new(Switch::new(), AppData::pathfinder_mode);
     Flex::column()
         .with_flex_child(grid, 1.0) // Grid widget

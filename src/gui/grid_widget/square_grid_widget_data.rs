@@ -6,6 +6,7 @@ use log::{debug, info};
 pub const LOCK_DRAWING: Selector =  Selector::new("lock-drawing");
 pub const UNLOCK_DRAWING: Selector =  Selector::new("unlock-drawing");
 pub const RESET: Selector =  Selector::new("RESET");
+pub const CLEAR_STORE: Selector = Selector::new("CLEAR");
 
 //////////////////////////////////////////////////////////////////////////////////////
 //
@@ -55,6 +56,8 @@ pub enum Interaction {
 #[derive(Clone, PartialEq, Data, Lens)]
 pub struct Grid {
     storage: HashMap<GridNodePosition, GridNodeType<Net>>,
+    addition_storage: HashSet<GridNodePosition>,
+    deletion_storage: HashSet<GridNodePosition>,
     pub start_node: GridNodePosition,
     pub end_node: GridNodePosition,
 }
@@ -62,39 +65,58 @@ pub struct Grid {
 impl Grid {
     pub fn new(start_node: GridNodePosition, end_node: GridNodePosition) -> Grid {
         let mut storage = HashMap::new();
+        let mut addition_storage =  HashSet::new();
+        let deletion_storage = HashSet::new();
         storage.insert(start_node, GridNodeType::StartNode(1));
         storage.insert(end_node, GridNodeType::TargetNode(1));
+        addition_storage.insert(start_node);
+        addition_storage.insert(end_node);
         Grid {
             storage: storage,
+            addition_storage: addition_storage,
+            deletion_storage,
             start_node: start_node,
             end_node: end_node,
         }
     }
 
-    pub fn clear_all(&mut self) {
-        self.storage.clear();
-        self.storage.insert(self.start_node, GridNodeType::StartNode(1));
-        self.storage.insert(self.end_node, GridNodeType::TargetNode(1));
-    }
-
+    
     pub fn len(&self) -> usize {
         self.storage.len()
     }
-
+    
     pub fn get_item(&self, key: &GridNodePosition) -> Option<&GridNodeType<Net>>{
         self.storage.get(key)
     }
-
-    pub fn get_storage(&self) -> HashMap<GridNodePosition, GridNodeType<Net>> {
-        self.storage.clone()
-    }
-
+    
     pub fn iter(&self) -> Iter<'_, GridNodePosition, GridNodeType<Net>>{
         self.storage.iter()
     }
 
-    pub fn difference(&mut self, other: HashMap<GridNodePosition, GridNodeType<Net>>) -> HashMap<GridNodePosition, GridNodeType<Net>>{
-        self.storage.clone().difference(other)
+    pub fn get_additions(&self) -> HashSet<GridNodePosition> {
+        self.addition_storage.clone()
+    }
+    
+    pub fn get_deletions(&self) -> HashSet<GridNodePosition> {
+        self.deletion_storage.clone()
+    }
+    
+    pub fn clear_store(&mut self){
+        self.addition_storage.clear();
+        self.deletion_storage.clear();
+    }
+    
+    pub fn clear_all(&mut self) {
+        let mut temp_list: HashSet<GridNodePosition> = HashSet::new();
+        for (node_pos , node_type) in self.storage.iter(){
+            if !matches!(node_type, &GridNodeType::StartNode(_)) && !matches!(node_type, &GridNodeType::TargetNode(_)){
+                temp_list.insert(*node_pos);
+            }
+        }
+
+        for node in temp_list.iter(){
+            self.remove_node(node);
+        }
     }
 
     pub fn clear_paths(&mut self) {
@@ -125,19 +147,23 @@ impl Grid {
                     
                     if !matches!(item, Some(&GridNodeType::StartNode(_))) && !matches!(item, Some(&GridNodeType::TargetNode(_))) {
                         self.storage.insert(*pos, GridNodeType::Wall);
+                        self.addition_storage.insert(*pos);
                         // if a wall node interferes with a chosenPath node reset algorithm and clear board
                     }
 
                     
                 } else {
                     self.storage.insert(*pos, GridNodeType::Wall);
+                    self.addition_storage.insert(*pos);
                 }
             },
             GridNodeType::StartNode(_) => {
                 if *pos != self.end_node {
                     self.storage.remove(&self.start_node);
+                    self.deletion_storage.insert(self.start_node);
                     self.start_node = *pos;
-                    self.storage.insert(*pos, GridNodeType::StartNode(net));
+                    self.storage.insert(self.start_node, GridNodeType::StartNode(net));
+                    self.addition_storage.insert(self.start_node);
                     // When either goalpoast is moved you need to reset the algorithm and clear the board from all the algorithm nodes
                     self.clear_paths();
                 }
@@ -146,8 +172,10 @@ impl Grid {
             GridNodeType::TargetNode(_) => {
                 if *pos != self.start_node{
                     self.storage.remove(&self.end_node);
+                    self.deletion_storage.insert(self.end_node);
                     self.end_node = *pos;
-                    self.storage.insert(*pos, GridNodeType::TargetNode(net));
+                    self.storage.insert(self.end_node, GridNodeType::TargetNode(net));
+                    self.addition_storage.insert(self.end_node);
                     // When either goalpoast is moved you need to reset the algorithm and clear the board from all the algorithm nodes
                     self.clear_paths();
                 }
@@ -157,18 +185,21 @@ impl Grid {
                 let item = self.storage.get(pos); 
                 if !matches!(item, Some(&GridNodeType::StartNode(_))) && !matches!(item, Some(&GridNodeType::TargetNode(_))) && item != Some(&GridNodeType::Wall){
                     self.storage.insert(*pos, GridNodeType::ExploredNodes(net));
+                    self.addition_storage.insert(*pos);
                 }
             },
             GridNodeType::UnexploredNodes(_) => {
                 let item = self.storage.get(pos); 
                 if !matches!(item, Some(&GridNodeType::StartNode(_))) && !matches!(item, Some(&GridNodeType::TargetNode(_)))  && item != Some(&GridNodeType::Wall){
                     self.storage.insert(*pos, GridNodeType::UnexploredNodes(net));
+                    self.addition_storage.insert(*pos);
                 }
             },
             GridNodeType::ChosenPath(_) => {
                 let item = self.storage.get(pos); 
                 if !matches!(item, Some(&GridNodeType::StartNode(_))) && !matches!(item, Some(&GridNodeType::TargetNode(_))){
                     self.storage.insert(*pos, GridNodeType::ChosenPath(net));
+                    self.addition_storage.insert(*pos);
                 }
             },
         }
@@ -178,6 +209,7 @@ impl Grid {
         let item = self.storage.get(pos);
         if !matches!(item, Some(&GridNodeType::StartNode(_)))  || !matches!(item, Some(&GridNodeType::TargetNode(_))) {
             self.storage.remove(pos);
+            self.deletion_storage.insert(*pos);
         }
     }
 
@@ -203,7 +235,7 @@ impl Grid {
 
     pub fn add_node_perimeter(&mut self, pos: GridNodePosition, row_n: usize, column_n: usize, tool: GridNodeType<Net>, net: Net) {
         for row in pos.row..pos.row+row_n {
-            //info!("Add node perimeter");
+            //debug!("Add node perimeter");
             //debug!("Row: {:?}", row);
             if row == pos.row || row == pos.row + row_n -1 {
                 // Top and Bottom Boundaries

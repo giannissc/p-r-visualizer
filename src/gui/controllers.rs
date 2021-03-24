@@ -42,7 +42,7 @@ impl <W: Widget<AppData>> Controller<AppData, W> for PathfinderController {
                             let finished_state =  &PathAlgorithmState::Finished;
 
                             if algorithm.get_algorithm_state() != failed_state && algorithm.get_algorithm_state() != finished_state { // Run the algorithm
-                                info!("Pathfinding algorithm running");
+                                //debug!("Pathfinding algorithm running");
 
                                 if algorithm.next_step(&mut data.grid_data.grid, &mut data.path_config) == *finished_state {
                                     data.grid_data.interaction_state = Interaction::None;
@@ -58,8 +58,7 @@ impl <W: Widget<AppData>> Controller<AppData, W> for PathfinderController {
         
                                 for node in algorithm.get_path_nodes().iter(){
                                     data.grid_data.grid.add_node(&node.position, GridNodeType::ChosenPath(data.grid_data.selected_net), data.grid_data.selected_net);                            
-                                }
-                                //ctx.request_paint(); // Change to partial paint? Move to each for loop                                
+                                }                              
                             }
     
                         } else {
@@ -70,11 +69,10 @@ impl <W: Widget<AppData>> Controller<AppData, W> for PathfinderController {
 
                             if algorithm.get_algorithm_state() != failed_state && algorithm.get_algorithm_state() != finished_state {
                                 
-                                info!("Maze generation algorithm running");
+                                //debug!("Maze generation algorithm running");
                                 if algorithm.next_step(&mut data.grid_data.grid) == *finished_state {
                                     data.grid_data.interaction_state = Interaction::None;
-                                }
-                                //ctx.request_paint(); // Change to partial paint? Move to each for loop                                
+                                }                           
                             }
                             
                         }

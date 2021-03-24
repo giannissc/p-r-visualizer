@@ -39,7 +39,6 @@ impl PathFinderAlgorithm for Astar {
             self.open_list.insert(self.current_path_node); // Step 1: Add the starting node to the open list
             self.algorithm_state = PathAlgorithmState::Running;     
             grid.clear_paths();
-            info!("Adding node perimeter");
             grid.add_node_perimeter(GridNodePosition{row:0, col:0}, GRID_ROWS, GRID_COLUMNS, GridNodeType::Wall, 1)
         } else if self.algorithm_state == PathAlgorithmState::Running {
             match self.get_next_node(){
@@ -94,7 +93,7 @@ impl PathFinderAlgorithm for Astar {
     }
 
     fn construct_path(&mut self) {
-        info!("Constructing Path");
+        //debug!("Constructing Path");
         let current_node = self.current_path_node;
         self.path_list.push_front(current_node);
         //debug!("Current node: {:?}", current_node);         
