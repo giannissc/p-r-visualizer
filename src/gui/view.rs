@@ -1,5 +1,5 @@
 
-use druid::{Env, EventCtx, Widget, WidgetExt, TextLayout};
+use druid::{Env, EventCtx, Size, TextLayout, Widget, WidgetExt};
 use druid::widget::{Button, Flex, Label, MainAxisAlignment, CrossAxisAlignment, Slider, Checkbox, Switch, LensWrap};
 use druid_widget_nursery::{DropdownSelect};
 use druid::im::vector;
@@ -18,15 +18,20 @@ use crate::maze_generation_algorithms::{random::Random, recursive_subdivision::R
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 pub fn make_ui() -> impl Widget<AppData> {
-    let grid = Flex::column().with_child(GridWidget::new(COLOR, GRID_ROWS, GRID_COLUMNS).with_id(GRID_ID).lens(AppData::grid_data));
+    let cell_size = Size{
+        width: 15.0,
+        height: 15.0,
+        
+    };
+    let grid = Flex::column().with_flex_child(GridWidget::new(COLOR, GRID_ROWS, GRID_COLUMNS, cell_size).with_id(GRID_ID).lens(AppData::grid_data),1.0);
     //let grid = Flex::column().with_child(GridWidget::new(COLOR, GRID_ROWS, GRID_COLUMNS).lens(AppData::grid_data).debug_invalidation());
 
     let switch = LensWrap::new(Switch::new(), AppData::pathfinder_mode);
     Flex::column()
-        .with_flex_child(grid,1.0)
-        .with_child(
+        .with_flex_child(grid, 1.0) // Grid widget
+        .with_child( // Control bar
             Flex::column()
-                .with_child(
+                .with_child( // Control Buttons
                     // a row with two buttons
                     Flex::row()
                         .with_flex_child(
@@ -45,7 +50,7 @@ pub fn make_ui() -> impl Widget<AppData> {
                         .with_child(make_grid_lines_button())
                     
                 )
-                .with_child(
+                .with_child( // Control sliders
                     Flex::row()
                         .with_child(
                             Label::new(|data: &AppData, _env: &_| {
@@ -135,7 +140,6 @@ fn make_tool_dropdown() -> impl Widget<AppData> {
 }
 
 fn make_path_dropdown() -> impl Widget<AppData> {
-    println!("Calling path dropdown");
     DropdownSelect::new(vector![
         ("A star", PathAlgorithms::Astar(Astar::new())),
         ("Dijkstra", PathAlgorithms::Dijkstra(Dijkstra::new())),

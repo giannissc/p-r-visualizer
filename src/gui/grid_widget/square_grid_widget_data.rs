@@ -39,7 +39,7 @@ impl GridWidgetData {
 // Interaction
 //
 //////////////////////////////////////////////////////////////////////////////////////
-#[derive(Clone, PartialEq, Data)]
+#[derive(Clone, PartialEq, Data, Debug)]
 pub enum Interaction {
     None,
     Drawing,
@@ -195,8 +195,8 @@ impl Grid {
 
     pub fn add_node_perimeter(&mut self, pos: GridNodePosition, row_n: usize, column_n: usize, tool: GridNodeType<Net>, net: Net) {
         for row in pos.row..pos.row+row_n {
-            info!("Add node perimeter");
-            debug!("Row: {:?}", row);
+            //info!("Add node perimeter");
+            //debug!("Row: {:?}", row);
             if row == pos.row || row == pos.row + row_n -1 {
                 // Top and Bottom Boundaries
                 info!("Printing top/bottom boundary");

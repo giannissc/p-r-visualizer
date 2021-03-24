@@ -91,6 +91,9 @@ impl <W: Widget<AppData>> Controller<AppData, W> for PathfinderController {
                     info!("Resetting algorithm");
                     let mut path_algorithm = data.path_tool.get_inner();
                     path_algorithm.reset();
+
+                    let mut maze_algorithm = data.maze_tool.get_inner();
+                    maze_algorithm.reset();
                 }
 
                 child.event(ctx, event, data, env)

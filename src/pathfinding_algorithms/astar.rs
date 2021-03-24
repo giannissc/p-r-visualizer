@@ -1,7 +1,7 @@
 use super::pathfinding_types::*;
 use druid::Data;
 use druid::im::{Vector, HashSet};
-use log::debug;
+use log::{debug, info};
 use crate::gui::grid_widget::square_grid_widget_data::*;
 use crate::data::app_data::{GRID_COLUMNS, GRID_ROWS};
 
@@ -93,12 +93,12 @@ impl PathFinderAlgorithm for Astar {
     }
 
     fn construct_path(&mut self) {
-        debug!("Constructing Path");
+        info!("Constructing Path");
         let current_node = self.current_path_node;
         self.path_list.push_front(current_node);
-        debug!("Current node: {:?}", current_node);         
+        //debug!("Current node: {:?}", current_node);         
         let parent_node = self.closed_list.remove(&PathNodes::reduced(current_node.parent.unwrap())).unwrap();
-        debug!("Parent node: {:?}", parent_node); 
+        //debug!("Parent node: {:?}", parent_node); 
         
         if parent_node.parent == None {
             self.algorithm_state = PathAlgorithmState::Finished;

@@ -150,8 +150,9 @@ impl MazeGenerationAlgorithm for RecursiveBacktrace {
             // Based on len() of random list choose 1 random index.
             let mut rng = rand::thread_rng();
             let index = rng.gen_range(0..second_order_list.len());
-            self.closed_list.insert(first_order_list[index]);
-            Some(second_order_list[index])
+            self.closed_list.insert(first_order_list.remove(index));
+            let element = second_order_list.remove(index);
+            Some(element)
         }        
     }
 
