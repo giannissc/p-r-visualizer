@@ -43,6 +43,7 @@ impl MazeGenerationAlgorithm for RecursiveBacktrace {
 
             // Clean board and setup perimeter    
             grid.clear_all();
+            info!("Adding node perimeter");
             grid.add_node_perimeter(GridNodePosition{row:0, col:0}, GRID_ROWS, GRID_COLUMNS, GridNodeType::Wall, 1);
 
             // Change state of algorithm to running

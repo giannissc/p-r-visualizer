@@ -59,7 +59,7 @@ impl <W: Widget<AppData>> Controller<AppData, W> for PathfinderController {
                                 for node in algorithm.get_path_nodes().iter(){
                                     data.grid_data.grid.add_node(&node.position, GridNodeType::ChosenPath(data.grid_data.selected_net), data.grid_data.selected_net);                            
                                 }
-                                ctx.request_paint(); // Change to partial paint? Move to each for loop                                
+                                //ctx.request_paint(); // Change to partial paint? Move to each for loop                                
                             }
     
                         } else {
@@ -74,7 +74,7 @@ impl <W: Widget<AppData>> Controller<AppData, W> for PathfinderController {
                                 if algorithm.next_step(&mut data.grid_data.grid) == *finished_state {
                                     data.grid_data.interaction_state = Interaction::None;
                                 }
-                                ctx.request_paint(); // Change to partial paint? Move to each for loop                                
+                                //ctx.request_paint(); // Change to partial paint? Move to each for loop                                
                             }
                             
                         }

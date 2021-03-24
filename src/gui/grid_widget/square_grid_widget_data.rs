@@ -81,12 +81,20 @@ impl Grid {
         self.storage.len()
     }
 
-    pub fn get(&self, key: &GridNodePosition) -> Option<&GridNodeType<Net>>{
+    pub fn get_item(&self, key: &GridNodePosition) -> Option<&GridNodeType<Net>>{
         self.storage.get(key)
+    }
+
+    pub fn get_storage(&self) -> HashMap<GridNodePosition, GridNodeType<Net>> {
+        self.storage.clone()
     }
 
     pub fn iter(&self) -> Iter<'_, GridNodePosition, GridNodeType<Net>>{
         self.storage.iter()
+    }
+
+    pub fn difference(&mut self, other: HashMap<GridNodePosition, GridNodeType<Net>>) -> HashMap<GridNodePosition, GridNodeType<Net>>{
+        self.storage.clone().difference(other)
     }
 
     pub fn clear_paths(&mut self) {
@@ -199,12 +207,12 @@ impl Grid {
             //debug!("Row: {:?}", row);
             if row == pos.row || row == pos.row + row_n -1 {
                 // Top and Bottom Boundaries
-                info!("Printing top/bottom boundary");
+                //debug!("Printing top/bottom boundary");
                 for  column in pos.col..pos.col+column_n {
                     self.add_node(&GridNodePosition{row:row, col:column}, tool, net);
                 }
             } else {  
-                info!("Printing left/right boundary");
+                //debug!("Printing left/right boundary");
                 // Left Boundary
                 self.add_node(&GridNodePosition{row:row, col:pos.col}, tool, net);
                 // Right Boundary
