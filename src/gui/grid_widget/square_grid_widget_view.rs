@@ -199,29 +199,49 @@ impl Widget<GridWidgetData> for GridWidget {
         debug!("Running paint method");
         //Update cell size
         let screen_space: Size = ctx.size();
-        //debug!("Screen space: {:?}", ctx.size());        
+        //debug!("Screen space: {:?}", ctx.size());
 
-        // Calculate minimum cell size to have all columns
-        self.chosen_cell_size = Size {
+        let width_sized_cell = Size {
             width: screen_space.width/self.max_columns as f64,
             height: screen_space.width/self.max_columns as f64,
         };
 
-        //debug!("Proposed cell size: {:?}", self.chosen_cell_size);
-        //debug!("Minimum cell size: {:?}", self.min_cell_size);
+        let height_sized_cell =Size {
+            width: screen_space.height/self.max_rows as f64,
+            height: screen_space.height/self.max_rows as f64,
+        };
+        
+        self.visible_rows = (screen_space.height / width_sized_cell.height).ceil() as usize;
+        self.visible_columns = (screen_space.width/ height_sized_cell.width).ceil() as usize;
+        self.chosen_cell_size = self.min_cell_size;
 
-        if self.chosen_cell_size.width >= self.min_cell_size.width {
-            self.visible_columns = self.max_columns;
-            
-        } else {
-            self.chosen_cell_size = self.min_cell_size;
-            self.visible_columns = (screen_space.width / self.chosen_cell_size.width).ceil() as usize;
+        debug!("Visible rows: {:?}", self.visible_rows);
+        debug!("Max rows: {:?}", self.max_rows);
+        debug!("Visible columns: {:?}", self.visible_columns);
+        debug!("Max column:  {:?}", self.max_columns);
+        if self.visible_rows > self.max_rows || self.visible_columns > self.max_columns {
+            let row_diff = self.visible_rows as i32 - self.max_rows as i32;
+            let col_diff = self.visible_columns as i32 - self.max_columns as i32;
+
+            if row_diff > col_diff {
+                // Calculate minimum cell size to have all columns
+                self.chosen_cell_size = height_sized_cell;
+                self.visible_rows = self.max_rows;
+                self.visible_columns = (screen_space.width / self.chosen_cell_size.width).ceil() as usize;
+            } else {
+                // Calculate minimum cell size to have all columns
+                self.chosen_cell_size = width_sized_cell;
+                self.visible_rows = (screen_space.height / self.chosen_cell_size.height).ceil() as usize;
+                self.visible_columns = self.max_columns;
+            }
         }
-        
-        self.visible_rows = (screen_space.height / self.chosen_cell_size.height).ceil() as usize;
 
-        
-        
+        if self.chosen_cell_size.height < self.min_cell_size.height {
+            self.chosen_cell_size = self.min_cell_size;
+        }
+
+        //debug!("Proposed cell size: {:?}", self.chosen_cell_size);
+        //debug!("Minimum cell size: {:?}", self.min_cell_size);        
         
         // Draw grid cells
         for (cell_pos, cell_type) in data.grid.iter(){
@@ -267,8 +287,10 @@ impl Widget<GridWidgetData> for GridWidget {
                     x: self.chosen_cell_size.width * column as f64,
                     y: 0.0,
                 };
+
+                let height = self.visible_rows as f64 * self.chosen_cell_size.height;
     
-                let size = Size::new( self.chosen_cell_size.width * 0.05, ctx.size().height);
+                let size = Size::new( self.chosen_cell_size.width * 0.05, height);
                 let rect = Rect::from_origin_size(from_point, size);
                 ctx.fill(rect, &Color::GRAY);  
             }
