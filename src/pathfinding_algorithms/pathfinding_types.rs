@@ -1,10 +1,12 @@
-use druid::{Data};
-use std::hash::{Hash, Hasher, };
 use super::distance_heuristics::Heuristics;
+use super::{
+    astar::Astar, bfs::BFS, dfs::DFS, dijkstra::Dijkstra, greedy_best_first::GreedyBestFirstSearch,
+    jump_point::JumpPoint, swarm::Swarm,
+};
 use crate::gui::grid_widget::square_grid_widget_data::*;
 use druid::im::{HashSet, Vector};
-use super::{astar::Astar, dfs::DFS, bfs::BFS, dijkstra::Dijkstra, swarm::Swarm, jump_point::JumpPoint, greedy_best_first::GreedyBestFirstSearch};
-
+use druid::Data;
+use std::hash::{Hash, Hasher};
 
 #[derive(Data, Clone, Eq, PartialEq, Debug)]
 pub enum PathAlgorithms {
@@ -18,15 +20,15 @@ pub enum PathAlgorithms {
 }
 
 impl PathAlgorithms {
-    pub fn get_inner(&mut self) -> Box<&mut dyn PathFinderAlgorithm>{
+    pub fn get_inner(&mut self) -> Box<&mut dyn PathFinderAlgorithm> {
         match self {
-            PathAlgorithms::Astar(inner ) => {Box::new(inner)}
-            PathAlgorithms::Dijkstra(inner) => {Box::new(inner)}
-            PathAlgorithms::GreedyBestFirstSearch(inner) => {Box::new(inner)}
-            PathAlgorithms::BFS(inner) => {Box::new(inner)}
-            PathAlgorithms::DFS(inner) => {Box::new(inner)}
-            PathAlgorithms::Swarm(inner) => {Box::new(inner)}
-            PathAlgorithms:: JumpPoint(inner) => {Box::new(inner)}
+            PathAlgorithms::Astar(inner) => Box::new(inner),
+            PathAlgorithms::Dijkstra(inner) => Box::new(inner),
+            PathAlgorithms::GreedyBestFirstSearch(inner) => Box::new(inner),
+            PathAlgorithms::BFS(inner) => Box::new(inner),
+            PathAlgorithms::DFS(inner) => Box::new(inner),
+            PathAlgorithms::Swarm(inner) => Box::new(inner),
+            PathAlgorithms::JumpPoint(inner) => Box::new(inner),
         }
     }
 }
@@ -46,15 +48,19 @@ impl PathfinderConfig {
     }
 }
 
-
 //////////////////////////////////////////////////////////////////////////////////////
 //
 // SquareGridAlgorithm
 //
 //////////////////////////////////////////////////////////////////////////////////////
-pub trait PathFinderAlgorithm{
+pub trait PathFinderAlgorithm {
     fn run(&mut self, grid: &mut Grid, config: &mut PathfinderConfig, net: Net);
-    fn next_step(&mut self, grid: &mut Grid, config: &mut PathfinderConfig, net: Net)  -> PathAlgorithmState;
+    fn next_step(
+        &mut self,
+        grid: &mut Grid,
+        config: &mut PathfinderConfig,
+        net: Net,
+    ) -> PathAlgorithmState;
     fn previous_step(&mut self, grid: &mut Grid, config: &mut PathfinderConfig, net: Net);
     fn reset(&mut self);
     fn construct_path(&mut self, grid: &mut Grid, net: Net);
@@ -74,8 +80,7 @@ pub enum PathAlgorithmState {
     Failed,
 }
 
-
-#[derive(Data, Copy, Clone, Debug, Eq, )]
+#[derive(Data, Copy, Clone, Debug, Eq)]
 pub struct PathNodes {
     pub cost_from_start: i64,
     pub cost_to_target: i64,
@@ -85,8 +90,12 @@ pub struct PathNodes {
 }
 
 impl PathNodes {
-
-    pub fn new(cost_start:i64, target_pos: GridNodePosition, current_pos:GridNodePosition, parent: Option<GridNodePosition>) -> Self {
+    pub fn new(
+        cost_start: i64,
+        target_pos: GridNodePosition,
+        current_pos: GridNodePosition,
+        parent: Option<GridNodePosition>,
+    ) -> Self {
         PathNodes {
             cost_from_start: cost_start,
             cost_to_target: Heuristics::target_cost(current_pos, target_pos),
@@ -96,7 +105,7 @@ impl PathNodes {
         }
     }
 
-    pub fn reduced(current_pos:GridNodePosition) -> Self {
+    pub fn reduced(current_pos: GridNodePosition) -> Self {
         PathNodes {
             cost_from_start: 0,
             cost_to_target: 0,
@@ -111,10 +120,9 @@ impl PathNodes {
             cost_from_start: 0,
             cost_to_target: 0,
             total_cost: 0,
-            position: GridNodePosition{row: 0, col: 0},
+            position: GridNodePosition { row: 0, col: 0 },
             parent: None,
         }
-
     }
 }
 
@@ -129,5 +137,3 @@ impl Hash for PathNodes {
         self.position.hash(hasher);
     }
 }
-
-

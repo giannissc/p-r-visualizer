@@ -18,11 +18,14 @@ pub struct NodeTypesInternal {
 }
 */
 
-use druid::{BoxConstraints, Data, Env, Event, EventCtx, LayoutCtx, Lens, LifeCycle, LifeCycleCtx, MouseButton, PaintCtx, RenderContext, UpdateCtx, Widget, im::Vector};
-use druid::{Color, Point, Rect, Size};
-use log::{debug, info};
 use super::square_grid_widget_data::*;
+use druid::{
+    im::Vector, BoxConstraints, Data, Env, Event, EventCtx, LayoutCtx, Lens, LifeCycle,
+    LifeCycleCtx, MouseButton, PaintCtx, RenderContext, UpdateCtx, Widget,
+};
+use druid::{Color, Point, Rect, Size};
 use druid_color_thesaurus::*;
+use log::{debug, info};
 
 //////////////////////////////////////////////////////////////////////////////////////
 //
@@ -42,7 +45,7 @@ pub struct GridWidget {
 }
 
 impl GridWidget {
-    pub fn new(color: Color, rows:usize, columns:usize, cell_size: Size) -> Self {
+    pub fn new(color: Color, rows: usize, columns: usize, cell_size: Size) -> Self {
         GridWidget {
             max_rows: rows,
             max_columns: columns,
@@ -53,7 +56,7 @@ impl GridWidget {
                 width: 0.0,
                 height: 0.0,
             },
-            left_corner_point: GridNodePosition{row:0, col:0},
+            left_corner_point: GridNodePosition { row: 0, col: 0 },
             color: color, // TODO Need color array
         }
     }
@@ -72,7 +75,7 @@ impl GridWidget {
         Some(GridNodePosition { row, col })
     }
 
-    pub fn invalidation_area (&self, pos: GridNodePosition) -> Rect{
+    pub fn invalidation_area(&self, pos: GridNodePosition) -> Rect {
         let point = Point {
             x: self.chosen_cell_size.width * pos.col as f64,
             y: self.chosen_cell_size.height * pos.row as f64,
@@ -87,7 +90,7 @@ impl Widget<GridWidgetData> for GridWidget {
             Event::Command(cmd) => {
                 if cmd.is(LOCK_DRAWING) {
                     data.interaction_state = Interaction::LockedUI
-                }else if cmd.is(UNLOCK_DRAWING) {
+                } else if cmd.is(UNLOCK_DRAWING) {
                     data.interaction_state = Interaction::None
                 } else if cmd.is(RESET) {
                     data.grid.clear_paths();
@@ -100,16 +103,21 @@ impl Widget<GridWidgetData> for GridWidget {
                 if e.button == MouseButton::Left {
                     let grid_pos_opt = self.grid_pos(e.pos);
                     grid_pos_opt.iter().for_each(|pos| {
-
                         if data.interaction_state == Interaction::None {
                             if data.selected_tool == GridNodeType::Empty {
                                 data.grid.remove_node(pos);
                             } else {
-                                if data.selected_tool == GridNodeType::TargetNode(data.selected_net) || data.selected_tool == GridNodeType::StartNode(data.selected_net) || data.grid.get_item(pos) == Some(&GridNodeType::ChosenPath(data.selected_net)) {
+                                if data.selected_tool == GridNodeType::TargetNode(data.selected_net)
+                                    || data.selected_tool
+                                        == GridNodeType::StartNode(data.selected_net)
+                                    || data.grid.get_item(pos)
+                                        == Some(&GridNodeType::ChosenPath(data.selected_net))
+                                {
                                     ctx.submit_command(RESET);
                                 }
 
-                                data.grid.add_node(pos, data.selected_tool, data.selected_net);
+                                data.grid
+                                    .add_node(pos, data.selected_tool, data.selected_net);
                             }
 
                             data.interaction_state = Interaction::Drawing;
@@ -118,26 +126,35 @@ impl Widget<GridWidgetData> for GridWidget {
                 }
             }
             Event::MouseUp(e) => {
-                if e.button == MouseButton::Left && data.interaction_state != Interaction::LockedUI {
+                if e.button == MouseButton::Left && data.interaction_state != Interaction::LockedUI
+                {
                     data.interaction_state = Interaction::None;
                 }
             }
             Event::MouseMove(e) => {
-                if data.interaction_state != Interaction::LockedUI && data.interaction_state != Interaction::None {
+                if data.interaction_state != Interaction::LockedUI
+                    && data.interaction_state != Interaction::None
+                {
                     let grid_pos_opt = self.grid_pos(e.pos);
                     grid_pos_opt.iter().for_each(|pos| {
-                       //debug!("Event Move: {:?}", *pos);
+                        //debug!("Event Move: {:?}", *pos);
 
                         if data.interaction_state == Interaction::Drawing {
                             if data.selected_tool == GridNodeType::Empty {
                                 data.grid.remove_node(pos);
                             } else {
-                                if data.selected_tool == GridNodeType::TargetNode(data.selected_net) || data.selected_tool == GridNodeType::StartNode(data.selected_net) || data.grid.get_item(pos) == Some(&GridNodeType::ChosenPath(data.selected_net)) {
+                                if data.selected_tool == GridNodeType::TargetNode(data.selected_net)
+                                    || data.selected_tool
+                                        == GridNodeType::StartNode(data.selected_net)
+                                    || data.grid.get_item(pos)
+                                        == Some(&GridNodeType::ChosenPath(data.selected_net))
+                                {
                                     ctx.submit_command(RESET);
                                 }
-                                
-                                data.grid.add_node(pos, data.selected_tool, data.selected_net);
-                            }   
+
+                                data.grid
+                                    .add_node(pos, data.selected_tool, data.selected_net);
+                            }
                         }
                         //debug!("Request rectange repaint");
                     });
@@ -147,10 +164,22 @@ impl Widget<GridWidgetData> for GridWidget {
         }
     }
 
-    fn lifecycle(&mut self, _ctx: &mut LifeCycleCtx, _event: &LifeCycle, _data: &GridWidgetData, _env: &Env, ) {
+    fn lifecycle(
+        &mut self,
+        _ctx: &mut LifeCycleCtx,
+        _event: &LifeCycle,
+        _data: &GridWidgetData,
+        _env: &Env,
+    ) {
     }
 
-    fn update(&mut self, ctx: &mut UpdateCtx, old_data: &GridWidgetData, data: &GridWidgetData, _env: &Env) {
+    fn update(
+        &mut self,
+        ctx: &mut UpdateCtx,
+        old_data: &GridWidgetData,
+        data: &GridWidgetData,
+        _env: &Env,
+    ) {
         //debug!("Running grid widget update method");
         //debug!("Difference: {:?}", data.grid.get_storage().difference(old_data.grid.get_storage()));
 
@@ -160,7 +189,6 @@ impl Widget<GridWidgetData> for GridWidget {
         } else {
             for cell in data.grid.get_additions().iter() {
                 ctx.request_paint_rect(self.invalidation_area(*cell));
-
             }
 
             for cell in data.grid.get_deletions().iter() {
@@ -172,9 +200,15 @@ impl Widget<GridWidgetData> for GridWidget {
     }
 
     // Maybe the issue when drawing a non square grid
-    fn layout(&mut self, _layout_ctx: &mut LayoutCtx, bc: &BoxConstraints, _data: &GridWidgetData, _env: &Env,) -> Size {
+    fn layout(
+        &mut self,
+        _layout_ctx: &mut LayoutCtx,
+        bc: &BoxConstraints,
+        _data: &GridWidgetData,
+        _env: &Env,
+    ) -> Size {
         let width = bc.max().width;
-        let height = bc.max().height; 
+        let height = bc.max().height;
         //debug!("Box constraints width: {:?}", bc.max().width);
         //debug!("Box constraints height: {:?}", bc.max().height);
 
@@ -191,48 +225,49 @@ impl Widget<GridWidgetData> for GridWidget {
         //debug!("Screen space: {:?}", ctx.size());
 
         let width_sized_cell = Size {
-            width: screen_space.width/self.max_columns as f64,
-            height: screen_space.width/self.max_columns as f64,
+            width: screen_space.width / self.max_columns as f64,
+            height: screen_space.width / self.max_columns as f64,
         };
 
-        let height_sized_cell =Size {
-            width: screen_space.height/self.max_rows as f64,
-            height: screen_space.height/self.max_rows as f64,
+        let height_sized_cell = Size {
+            width: screen_space.height / self.max_rows as f64,
+            height: screen_space.height / self.max_rows as f64,
         };
-        
+
         self.visible_rows = (screen_space.height / width_sized_cell.height).ceil() as usize;
-        self.visible_columns = (screen_space.width/ height_sized_cell.width).ceil() as usize;
+        self.visible_columns = (screen_space.width / height_sized_cell.width).ceil() as usize;
         self.chosen_cell_size = self.min_cell_size;
 
-        
         if self.visible_rows > self.max_rows || self.visible_columns > self.max_columns {
             let row_diff = self.visible_rows as i32 - self.max_rows as i32;
             let col_diff = self.visible_columns as i32 - self.max_columns as i32;
-            
+
             if row_diff > col_diff {
                 // Calculate minimum cell size to have all columns
                 self.chosen_cell_size = height_sized_cell;
                 self.visible_rows = self.max_rows;
-                self.visible_columns = (screen_space.width / self.chosen_cell_size.width).ceil() as usize;
+                self.visible_columns =
+                    (screen_space.width / self.chosen_cell_size.width).ceil() as usize;
             } else {
                 // Calculate minimum cell size to have all columns
                 self.chosen_cell_size = width_sized_cell;
-                self.visible_rows = (screen_space.height / self.chosen_cell_size.height).ceil() as usize;
+                self.visible_rows =
+                    (screen_space.height / self.chosen_cell_size.height).ceil() as usize;
                 self.visible_columns = self.max_columns;
             }
         }
-        
+
         if self.chosen_cell_size.height < self.min_cell_size.height {
             self.chosen_cell_size = self.min_cell_size;
         }
-        
+
         //debug!("Visible rows: {:?}", self.visible_rows);
         //debug!("Max rows: {:?}", self.max_rows);
         //debug!("Visible columns: {:?}", self.visible_columns);
         //debug!("Max column:  {:?}", self.max_columns);
         //debug!("Chosen cell size: {:?}", self.chosen_cell_size);
-        //debug!("Minimum cell size: {:?}", self.min_cell_size);        
-        
+        //debug!("Minimum cell size: {:?}", self.min_cell_size);
+
         // Draw grid cells
 
         // Calculate area to render
@@ -242,20 +277,20 @@ impl Widget<GridWidgetData> for GridWidget {
             paint_rectangles.push_front(*paint_rect);
         }
 
-        for paint_rect in paint_rectangles.iter(){
+        for paint_rect in paint_rectangles.iter() {
             let from_grid_pos: GridNodePosition = self.grid_pos(paint_rect.origin()).unwrap();
             let from_row = from_grid_pos.row;
             let from_col = from_grid_pos.col;
-        
+
             let to_grid_pos = self
-            .grid_pos(Point::new(paint_rect.max_x(), paint_rect.max_y()))
-            .unwrap_or(GridNodePosition {
-                col: self.visible_columns - 1,
-                row: self.visible_rows - 1,
-            });
+                .grid_pos(Point::new(paint_rect.max_x(), paint_rect.max_y()))
+                .unwrap_or(GridNodePosition {
+                    col: self.visible_columns - 1,
+                    row: self.visible_rows - 1,
+                });
             let to_row = to_grid_pos.row;
             let to_col = to_grid_pos.col;
-            
+
             //debug!("Bounding box with origin {:?} and dimensions {:?} × {:?}", paint_rect.origin(), paint_rect.width(), paint_rect.height());
             //debug!("Paint from row: {:?} to row {:?}", from_row, to_row);
             //debug!("Paint from col: {:?} to col {:?}", from_col, to_col);
@@ -272,7 +307,11 @@ impl Widget<GridWidgetData> for GridWidget {
 
                     let grid_pos = GridNodePosition { row, col };
 
-                    match data.grid.get_item(&grid_pos).unwrap_or(&GridNodeType::Empty) {
+                    match data
+                        .grid
+                        .get_item(&grid_pos)
+                        .unwrap_or(&GridNodeType::Empty)
+                    {
                         GridNodeType::Wall => ctx.fill(rect, &black::ONYX),
                         GridNodeType::StartNode(_) => ctx.fill(rect, &blue::ARGENTINIAN_BLUE),
                         GridNodeType::TargetNode(_) => ctx.fill(rect, &purple::PURPUREUS),
@@ -281,8 +320,6 @@ impl Widget<GridWidgetData> for GridWidget {
                         GridNodeType::ChosenPath(_) => ctx.fill(rect, &green::PERSIAN_GREEN),
                         _ => (),
                     }
-
-
                 }
             }
         }
@@ -290,18 +327,17 @@ impl Widget<GridWidgetData> for GridWidget {
         let bounding_box = ctx.region().bounding_box();
 
         let from_grid_pos: GridNodePosition = self.grid_pos(bounding_box.origin()).unwrap();
-            let from_row = from_grid_pos.row;
-            let from_col = from_grid_pos.col;
-        
-            let to_grid_pos = self
+        let from_row = from_grid_pos.row;
+        let from_col = from_grid_pos.col;
+
+        let to_grid_pos = self
             .grid_pos(Point::new(bounding_box.max_x(), bounding_box.max_y()))
             .unwrap_or(GridNodePosition {
                 col: self.visible_columns - 1,
                 row: self.visible_rows - 1,
             });
-            let to_row = to_grid_pos.row;
-            let to_col = to_grid_pos.col;
-
+        let to_row = to_grid_pos.row;
+        let to_col = to_grid_pos.col;
 
         // Draw grid axis
 
@@ -311,12 +347,12 @@ impl Widget<GridWidgetData> for GridWidget {
                     x: 0.0,
                     y: self.chosen_cell_size.height * row as f64,
                 };
-    
+
                 let size = Size::new(ctx.size().width, self.chosen_cell_size.height * 0.05);
                 let rect = Rect::from_origin_size(from_point, size);
                 ctx.fill(rect, &Color::GRAY);
             }
-    
+
             for col in from_col..=to_col {
                 let from_point = Point {
                     x: self.chosen_cell_size.width * col as f64,
@@ -324,16 +360,12 @@ impl Widget<GridWidgetData> for GridWidget {
                 };
 
                 let height = self.visible_rows as f64 * self.chosen_cell_size.height;
-    
-                let size = Size::new( self.chosen_cell_size.width * 0.05, height);
+
+                let size = Size::new(self.chosen_cell_size.width * 0.05, height);
                 let rect = Rect::from_origin_size(from_point, size);
-                ctx.fill(rect, &Color::GRAY);  
+                ctx.fill(rect, &Color::GRAY);
             }
         }
-        
-        
-        
-
     }
 
     fn id(&self) -> Option<druid::WidgetId> {

@@ -1,15 +1,15 @@
 use super::pathfinding_types::*;
-use druid::Data;
-use druid::im::{Vector, HashSet};
 use crate::gui::grid_widget::square_grid_widget_data::*;
+use druid::im::{HashSet, Vector};
+use druid::Data;
 
 #[derive(Data, Clone, Eq, PartialEq, Debug)]
-pub struct Dijkstra{
+pub struct Dijkstra {
     algorithm_state: PathAlgorithmState,
     open_list: HashSet<PathNodes>,
     closed_list: HashSet<PathNodes>,
     path_list: Vector<PathNodes>,
-    current_path_node: PathNodes, 
+    current_path_node: PathNodes,
 }
 
 impl Dijkstra {
@@ -18,22 +18,37 @@ impl Dijkstra {
             algorithm_state: PathAlgorithmState::Initialization,
             open_list: HashSet::new(),
             closed_list: HashSet::new(),
-            path_list: Vector::new(), 
+            path_list: Vector::new(),
             current_path_node: PathNodes::empty(),
         }
     }
 }
 
 impl PathFinderAlgorithm for Dijkstra {
-    fn run(&mut self, grid: &mut crate::gui::grid_widget::square_grid_widget_data::Grid, config: &mut PathfinderConfig, net: Net) {
+    fn run(
+        &mut self,
+        grid: &mut crate::gui::grid_widget::square_grid_widget_data::Grid,
+        config: &mut PathfinderConfig,
+        net: Net,
+    ) {
         todo!()
     }
 
-    fn next_step(&mut self, grid: &mut crate::gui::grid_widget::square_grid_widget_data::Grid, config: &mut PathfinderConfig, net: Net)  -> PathAlgorithmState {
+    fn next_step(
+        &mut self,
+        grid: &mut crate::gui::grid_widget::square_grid_widget_data::Grid,
+        config: &mut PathfinderConfig,
+        net: Net,
+    ) -> PathAlgorithmState {
         todo!()
     }
 
-    fn previous_step(&mut self, grid: &mut crate::gui::grid_widget::square_grid_widget_data::Grid, config: &mut PathfinderConfig, net: Net) {
+    fn previous_step(
+        &mut self,
+        grid: &mut crate::gui::grid_widget::square_grid_widget_data::Grid,
+        config: &mut PathfinderConfig,
+        net: Net,
+    ) {
         todo!()
     }
 

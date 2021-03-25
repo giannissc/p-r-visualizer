@@ -12,8 +12,8 @@ mod data {
 }
 
 mod gui {
-    pub mod view;
     pub mod controllers;
+    pub mod view;
 
     pub mod grid_widget {
         pub mod square_grid_widget_data;
@@ -22,15 +22,15 @@ mod gui {
 }
 
 mod pathfinding_algorithms {
-    pub mod pathfinding_types;
     pub mod astar;
-    pub mod dijkstra;
     pub mod bfs;
     pub mod dfs;
-    pub mod swarm;
-    pub mod jump_point;
-    pub mod greedy_best_first;
+    pub mod dijkstra;
     pub mod distance_heuristics;
+    pub mod greedy_best_first;
+    pub mod jump_point;
+    pub mod pathfinding_types;
+    pub mod swarm;
 }
 
 mod maze_generation_algorithms {
@@ -38,22 +38,19 @@ mod maze_generation_algorithms {
     pub mod random;
     pub mod recursive_backtrace;
     pub mod recursive_subdivision;
-
 }
 
 use crate::data::app_data::*;
+use crate::gui::grid_widget::square_grid_widget_data::{Grid, GridNodePosition, GridWidgetData};
 use crate::gui::view::make_ui;
-use crate::gui::grid_widget::square_grid_widget_data::{GridWidgetData, GridNodePosition, Grid};
-use crate::pathfinding_algorithms::pathfinding_types::*;
-use crate::pathfinding_algorithms::{astar::Astar};
-use crate::maze_generation_algorithms::{recursive_backtrace::RecursiveBacktrace};
 use crate::maze_generation_algorithms::maze_generation_types::*;
+use crate::maze_generation_algorithms::recursive_backtrace::RecursiveBacktrace;
+use crate::pathfinding_algorithms::astar::Astar;
+use crate::pathfinding_algorithms::pathfinding_types::*;
 
 // Druid imports
 
-use druid::{ theme, AppLauncher, LocalizedString, WindowDesc,Color, };
-
-
+use druid::{theme, AppLauncher, Color, LocalizedString, WindowDesc};
 
 //////////////////////////////////////////////////////////////////////////////////////
 //
@@ -69,11 +66,14 @@ fn main() {
         is_paused: false,
         is_running: false,
         updates_per_second: 10.0,
-        grid_data: GridWidgetData::new(Grid::new(GridNodePosition{row: 20, col: 10}, GridNodePosition{row:20, col:50})),
+        grid_data: GridWidgetData::new(Grid::new(
+            GridNodePosition { row: 20, col: 10 },
+            GridNodePosition { row: 20, col: 50 },
+        )),
         path_tool: PathAlgorithms::Astar(Astar::new()),
         path_config: PathfinderConfig::new(),
         maze_tool: MazeAlgorithms::RecursiveBacktrace(RecursiveBacktrace::new()),
-        pathfinder_mode: true,       
+        pathfinder_mode: true,
     };
     AppLauncher::with_window(main_window)
         .configure_env(|env, _| {

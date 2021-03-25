@@ -1,14 +1,14 @@
 use super::maze_generation_types::*;
-use druid::Data;
-use druid::im::{HashSet, Vector};
-use crate::gui::grid_widget::square_grid_widget_data::*;
 use crate::data::app_data::{AppData, GRID_COLUMNS, GRID_ROWS};
+use crate::gui::grid_widget::square_grid_widget_data::*;
+use druid::im::{HashSet, Vector};
+use druid::Data;
 
 #[derive(Data, Clone, Eq, PartialEq, Debug)]
 pub struct RecursiveSubdivision {
     algorithm_state: MazeAlgorithmState,
     closed_list: HashSet<MazeNodes>,
-    current_path_node: MazeNodes, 
+    current_path_node: MazeNodes,
 }
 
 impl RecursiveSubdivision {
@@ -26,7 +26,10 @@ impl MazeGenerationAlgorithm for RecursiveSubdivision {
         todo!()
     }
 
-    fn next_step(&mut self, grid: &mut crate::gui::grid_widget::square_grid_widget_data::Grid)  -> MazeAlgorithmState {
+    fn next_step(
+        &mut self,
+        grid: &mut crate::gui::grid_widget::square_grid_widget_data::Grid,
+    ) -> MazeAlgorithmState {
         todo!()
     }
 

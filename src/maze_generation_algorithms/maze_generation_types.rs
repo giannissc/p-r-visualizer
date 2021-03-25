@@ -1,8 +1,11 @@
-use druid::Data;
-use druid::im::{HashSet, Vector};
+use super::{
+    random::Random, recursive_backtrace::RecursiveBacktrace,
+    recursive_subdivision::RecursiveSubdivision,
+};
 use crate::gui::grid_widget::square_grid_widget_data::*;
-use std::hash::{Hash, Hasher, };
-use super::{recursive_backtrace::RecursiveBacktrace, recursive_subdivision::RecursiveSubdivision, random::Random};
+use druid::im::{HashSet, Vector};
+use druid::Data;
+use std::hash::{Hash, Hasher};
 
 #[derive(Data, Clone, Eq, PartialEq, Debug)]
 pub enum MazeAlgorithms {
@@ -14,16 +17,16 @@ pub enum MazeAlgorithms {
 impl MazeAlgorithms {
     pub fn get_inner(&mut self) -> Box<&mut dyn MazeGenerationAlgorithm> {
         match self {
-            MazeAlgorithms::Random(inner) => {Box::new(inner)}
-            MazeAlgorithms::RecursiveBacktrace(inner) => {Box::new(inner)}
-            MazeAlgorithms::RecursiveSubdivision(inner) => {Box::new(inner)}
+            MazeAlgorithms::Random(inner) => Box::new(inner),
+            MazeAlgorithms::RecursiveBacktrace(inner) => Box::new(inner),
+            MazeAlgorithms::RecursiveSubdivision(inner) => Box::new(inner),
         }
     }
 }
 
-pub trait MazeGenerationAlgorithm{
+pub trait MazeGenerationAlgorithm {
     fn run(&mut self, grid: &mut Grid);
-    fn next_step(&mut self, grid: &mut Grid)  -> MazeAlgorithmState;
+    fn next_step(&mut self, grid: &mut Grid) -> MazeAlgorithmState;
     fn previous_step(&mut self);
     fn reset(&mut self);
     fn get_next_node(&mut self, grid: &mut Grid) -> Option<MazeNodes>;
@@ -36,7 +39,7 @@ pub struct MazeGenerationConfig {
     pub algorithm_state: MazeAlgorithmState,
     pub open_list: HashSet<MazeNodes>,
     pub closed_list: HashSet<MazeNodes>,
-    pub current_path_node: MazeNodes, 
+    pub current_path_node: MazeNodes,
 }
 
 impl MazeGenerationConfig {
@@ -56,15 +59,14 @@ pub enum MazeAlgorithmState {
     Finished,
     Failed,
 }
-#[derive(Data, Copy, Clone, Debug, Eq, )]
+#[derive(Data, Copy, Clone, Debug, Eq)]
 pub struct MazeNodes {
     pub position: GridNodePosition,
     pub parent: Option<GridNodePosition>,
 }
 
 impl MazeNodes {
-
-    pub fn new(current_pos:GridNodePosition, parent: Option<GridNodePosition>) -> Self {
+    pub fn new(current_pos: GridNodePosition, parent: Option<GridNodePosition>) -> Self {
         MazeNodes {
             position: current_pos,
             parent: parent,
@@ -73,10 +75,9 @@ impl MazeNodes {
 
     pub fn empty() -> Self {
         MazeNodes {
-            position: GridNodePosition{row: 0, col: 0},
+            position: GridNodePosition { row: 0, col: 0 },
             parent: None,
         }
-
     }
 }
 
