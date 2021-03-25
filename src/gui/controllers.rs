@@ -44,21 +44,9 @@ impl <W: Widget<AppData>> Controller<AppData, W> for PathfinderController {
                             if algorithm.get_algorithm_state() != failed_state && algorithm.get_algorithm_state() != finished_state { // Run the algorithm
                                 //debug!("Pathfinding algorithm running");
 
-                                if algorithm.next_step(&mut data.grid_data.grid, &mut data.path_config) == *finished_state {
+                                if algorithm.next_step(&mut data.grid_data.grid, &mut data.path_config, data.grid_data.selected_net) == *finished_state {
                                     data.grid_data.interaction_state = Interaction::None;
-                                }
-        
-                                for node in algorithm.get_open_nodes().iter(){
-                                    data.grid_data.grid.add_node(&node.position, GridNodeType::UnexploredNodes(data.grid_data.selected_net), data.grid_data.selected_net);
-                                }
-        
-                                for node in algorithm.get_closed_nodes().iter(){
-                                    data.grid_data.grid.add_node(&node.position, GridNodeType::ExploredNodes(data.grid_data.selected_net), data.grid_data.selected_net);                            
-                                }
-        
-                                for node in algorithm.get_path_nodes().iter(){
-                                    data.grid_data.grid.add_node(&node.position, GridNodeType::ChosenPath(data.grid_data.selected_net), data.grid_data.selected_net);                            
-                                }                              
+                                }                         
                             }
     
                         } else {

@@ -182,14 +182,16 @@ impl Grid {
                 
             },
             GridNodeType::ExploredNodes(_) => {
-                let item = self.storage.get(pos); 
+                let item = self.storage.get(pos);
+                debug!("Item: {:?}", item);
                 if !matches!(item, Some(&GridNodeType::StartNode(_))) && !matches!(item, Some(&GridNodeType::TargetNode(_))) && item != Some(&GridNodeType::Wall){
                     self.storage.insert(*pos, GridNodeType::ExploredNodes(net));
                     self.addition_storage.insert(*pos);
                 }
             },
             GridNodeType::UnexploredNodes(_) => {
-                let item = self.storage.get(pos); 
+                let item = self.storage.get(pos);
+                debug!("Item: {:?}", item); 
                 if !matches!(item, Some(&GridNodeType::StartNode(_))) && !matches!(item, Some(&GridNodeType::TargetNode(_)))  && item != Some(&GridNodeType::Wall){
                     self.storage.insert(*pos, GridNodeType::UnexploredNodes(net));
                     self.addition_storage.insert(*pos);
@@ -197,6 +199,7 @@ impl Grid {
             },
             GridNodeType::ChosenPath(_) => {
                 let item = self.storage.get(pos); 
+                debug!("Item: {:?}", item);
                 if !matches!(item, Some(&GridNodeType::StartNode(_))) && !matches!(item, Some(&GridNodeType::TargetNode(_))){
                     self.storage.insert(*pos, GridNodeType::ChosenPath(net));
                     self.addition_storage.insert(*pos);
@@ -207,7 +210,7 @@ impl Grid {
 
     pub fn remove_node(&mut self, pos: &GridNodePosition) {
         let item = self.storage.get(pos);
-        if !matches!(item, Some(&GridNodeType::StartNode(_)))  || !matches!(item, Some(&GridNodeType::TargetNode(_))) {
+        if !matches!(item, Some(&GridNodeType::StartNode(_)))  && !matches!(item, Some(&GridNodeType::TargetNode(_))) {
             self.storage.remove(pos);
             self.deletion_storage.insert(*pos);
         }

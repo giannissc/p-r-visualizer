@@ -1,6 +1,7 @@
 use super::pathfinding_types::*;
 use druid::Data;
 use druid::im::{Vector, HashSet};
+use crate::gui::grid_widget::square_grid_widget_data::*;
 
 #[derive(Data, Clone, Eq, PartialEq, Debug)]
 pub struct JumpPoint{
@@ -24,15 +25,15 @@ impl JumpPoint {
 }
 
 impl PathFinderAlgorithm for JumpPoint {
-    fn run(&mut self, grid: &mut crate::gui::grid_widget::square_grid_widget_data::Grid, config: &mut PathfinderConfig) {
+    fn run(&mut self, grid: &mut crate::gui::grid_widget::square_grid_widget_data::Grid, config: &mut PathfinderConfig, net: Net) {
         todo!()
     }
 
-    fn next_step(&mut self, grid: &mut crate::gui::grid_widget::square_grid_widget_data::Grid, config: &mut PathfinderConfig)  -> PathAlgorithmState {
+    fn next_step(&mut self, grid: &mut crate::gui::grid_widget::square_grid_widget_data::Grid, config: &mut PathfinderConfig, net: Net)  -> PathAlgorithmState {
         todo!()
     }
 
-    fn previous_step(&mut self, grid: &mut crate::gui::grid_widget::square_grid_widget_data::Grid, config: &mut PathfinderConfig) {
+    fn previous_step(&mut self, grid: &mut crate::gui::grid_widget::square_grid_widget_data::Grid, config: &mut PathfinderConfig, net: Net) {
         todo!()
     }
 
@@ -40,7 +41,7 @@ impl PathFinderAlgorithm for JumpPoint {
         todo!()
     }
 
-    fn construct_path(&mut self) {
+    fn construct_path(&mut self, grid: &mut Grid, net: Net) {
         todo!()
     }
 

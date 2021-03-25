@@ -257,8 +257,6 @@ impl Widget<GridWidgetData> for GridWidget {
             let to_col = to_grid_pos.col;
             
             //debug!("Bounding box with origin {:?} and dimensions {:?} × {:?}", paint_rect.origin(), paint_rect.width(), paint_rect.height());
-
-            let invalidation_rectangles = ctx.region().rects();
             //debug!("Paint from row: {:?} to row {:?}", from_row, to_row);
             //debug!("Paint from col: {:?} to col {:?}", from_col, to_col);
 
@@ -287,35 +285,50 @@ impl Widget<GridWidgetData> for GridWidget {
 
                 }
             }
+        }
 
-            // Draw grid axis
+        let bounding_box = ctx.region().bounding_box();
 
-            if data.show_grid_axis {
-                for row in from_row..=to_row {
-                    let from_point = Point {
-                        x: 0.0,
-                        y: self.chosen_cell_size.height * row as f64,
-                    };
+        let from_grid_pos: GridNodePosition = self.grid_pos(bounding_box.origin()).unwrap();
+            let from_row = from_grid_pos.row;
+            let from_col = from_grid_pos.col;
         
-                    let size = Size::new(ctx.size().width, self.chosen_cell_size.height * 0.05);
-                    let rect = Rect::from_origin_size(from_point, size);
-                    ctx.fill(rect, &Color::GRAY);
-                }
-        
-                for col in from_col..=to_col {
-                    let from_point = Point {
-                        x: self.chosen_cell_size.width * col as f64,
-                        y: 0.0,
-                    };
+            let to_grid_pos = self
+            .grid_pos(Point::new(bounding_box.max_x(), bounding_box.max_y()))
+            .unwrap_or(GridNodePosition {
+                col: self.visible_columns - 1,
+                row: self.visible_rows - 1,
+            });
+            let to_row = to_grid_pos.row;
+            let to_col = to_grid_pos.col;
 
-                    let height = self.visible_rows as f64 * self.chosen_cell_size.height;
-        
-                    let size = Size::new( self.chosen_cell_size.width * 0.05, height);
-                    let rect = Rect::from_origin_size(from_point, size);
-                    ctx.fill(rect, &Color::GRAY);  
-                }
+
+        // Draw grid axis
+
+        if data.show_grid_axis {
+            for row in from_row..=to_row {
+                let from_point = Point {
+                    x: 0.0,
+                    y: self.chosen_cell_size.height * row as f64,
+                };
+    
+                let size = Size::new(ctx.size().width, self.chosen_cell_size.height * 0.05);
+                let rect = Rect::from_origin_size(from_point, size);
+                ctx.fill(rect, &Color::GRAY);
             }
+    
+            for col in from_col..=to_col {
+                let from_point = Point {
+                    x: self.chosen_cell_size.width * col as f64,
+                    y: 0.0,
+                };
 
+                let height = self.visible_rows as f64 * self.chosen_cell_size.height;
+    
+                let size = Size::new( self.chosen_cell_size.width * 0.05, height);
+                let rect = Rect::from_origin_size(from_point, size);
+                ctx.fill(rect, &Color::GRAY);  
+            }
         }
         
         

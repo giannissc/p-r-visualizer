@@ -53,11 +53,11 @@ impl PathfinderConfig {
 //
 //////////////////////////////////////////////////////////////////////////////////////
 pub trait PathFinderAlgorithm{
-    fn run(&mut self, grid: &mut Grid, config: &mut PathfinderConfig);
-    fn next_step(&mut self, grid: &mut Grid, config: &mut PathfinderConfig)  -> PathAlgorithmState;
-    fn previous_step(&mut self, grid: &mut Grid, config: &mut PathfinderConfig);
+    fn run(&mut self, grid: &mut Grid, config: &mut PathfinderConfig, net: Net);
+    fn next_step(&mut self, grid: &mut Grid, config: &mut PathfinderConfig, net: Net)  -> PathAlgorithmState;
+    fn previous_step(&mut self, grid: &mut Grid, config: &mut PathfinderConfig, net: Net);
     fn reset(&mut self);
-    fn construct_path(&mut self);
+    fn construct_path(&mut self, grid: &mut Grid, net: Net);
     fn get_next_node(&self) -> Option<PathNodes>;
     fn get_open_nodes(&self) -> &HashSet<PathNodes>;
     fn get_closed_nodes(&self) -> &HashSet<PathNodes>;
