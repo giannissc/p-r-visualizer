@@ -53,7 +53,7 @@ pub fn make_ui() -> impl Widget<AppData> {
                                 .with_flex_child(make_next_button(), 1.0)
                                 .with_flex_child(make_clear_button(), 1.0)
                                 .with_flex_child(make_tool_dropdown(), 1.0)
-                                //.with_flex_child(make_path_dropdown(), 1.0)
+                                .with_flex_child(make_path_dropdown(), 1.0)
                                 .with_flex_child(switch, 1.0)
                                 //.with_flex_child(make_maze_dropdown(), 1.0)
                                 .padding(8.0),

@@ -54,8 +54,10 @@ impl PathFinderAlgorithm for Astar {
                 GRID_COLUMNS,
                 GridNodeType::Wall,
                 1,
-            )
+            );
+            info!("Finish algorithm setup");
         } else if self.algorithm_state == PathAlgorithmState::Running {
+            debug!("Setting up algorithm");
             match self.get_next_node() {
                 None => self.algorithm_state = PathAlgorithmState::Failed,
                 Some(current_node) => {

@@ -2,6 +2,7 @@ use druid::im::hashmap::Iter;
 use druid::im::{HashMap, HashSet};
 use druid::{Data, Lens, Selector};
 use log::{debug, info};
+use std::rc::Rc;
 
 pub const LOCK_DRAWING: Selector = Selector::new("lock-drawing");
 pub const UNLOCK_DRAWING: Selector = Selector::new("unlock-drawing");
@@ -71,23 +72,15 @@ impl Grid {
         addition_storage.insert(end_node);
         Grid {
             storage: storage,
-            addition_storage: addition_storage,
+            addition_storage,
             deletion_storage,
             start_node: start_node,
             end_node: end_node,
         }
     }
 
-    pub fn len(&self) -> usize {
-        self.storage.len()
-    }
-
     pub fn get_item(&self, key: &GridNodePosition) -> Option<&GridNodeType<Net>> {
         self.storage.get(key)
-    }
-
-    pub fn iter(&self) -> Iter<'_, GridNodePosition, GridNodeType<Net>> {
-        self.storage.iter()
     }
 
     pub fn get_additions(&self) -> HashSet<GridNodePosition> {
